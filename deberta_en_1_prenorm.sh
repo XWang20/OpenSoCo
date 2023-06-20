@@ -2,14 +2,14 @@
 
 export OMP_NUM_THREADS=1
 export CUDA_DEVICE_MAX_CONNECTIONS=1
-export CUDA_VISIBLE_DEVICES=0,1,2,3,4,5,6,7
+export CUDA_VISIBLE_DEVICES=4,5,6,7
 
 MASTER_ADDR=localhost
 MASTER_PORT=12423
 NNODES=1
 NODE_RANK=0
 
-GPUS_PER_NODE=8
+GPUS_PER_NODE=4
 
 DISTRIBUTED_ARGS="--nproc_per_node ${GPUS_PER_NODE} \
                   --nnodes ${NNODES} \
@@ -17,13 +17,12 @@ DISTRIBUTED_ARGS="--nproc_per_node ${GPUS_PER_NODE} \
                   --master_addr ${MASTER_ADDR} \
                   --master_port ${MASTER_PORT}"
 
-BASE_PATH="/home/ubuntu/bm_train_codes"
-DATA_PATH="/DATA/data"
-SAVE_PATH="/home/ubuntu/bm_train_codes/save"
+BASE_PATH="/data/private/wangxing/OpenSoCo/bm_train_codes"
+DATA_PATH="/data/private/wangxing/OpenSoCo/"
+SAVE_PATH="/data/private/wangxing/OpenSoCo/bm_train_codes/save"
 DATASET_NAME="OpenSoCo_en"
 TEST_DATASET="OpenSoCo_en"
 CONFIG="deberta_prenorm"
-
 
 OPTS=""
 OPTS+=" --vocab-file ${BASE_PATH}/config/${CONFIG}.json"
@@ -37,14 +36,14 @@ OPTS+=" --warmup-iters 10000"
 OPTS+=" --lr-decay-style linear"
 OPTS+=" --lr-decay-iters 1000000"
 OPTS+=" --weight-decay 0.01"
-OPTS+=" --clip-grad 1"
+OPTS+=" --clip-grad 0.2"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size 64"
+OPTS+=" --batch-size 256"
 OPTS+=" --lr 1e-4"
 OPTS+=" --save-iters 2500"
-OPTS+=" --log-iters 50"
-OPTS+=" --gradient-accumulate 4"
+OPTS+=" --log-iters 10"
+OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"

@@ -1,4 +1,7 @@
+./__pycache__
 ./roberta-base
 ./save
 ./init_checkpoint
 ./valid
+*.npy
+./wandb

@@ -5,11 +5,12 @@ from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDatas
 from model_center.utils import print_inspect
 from dataset import BertDataset
 from torch.utils.tensorboard import SummaryWriter
-#from transformers import 
 import time
 from arguments import get_args
 from scale_model import scale_roberta_model
 import os
+
+import wandb
 
 def get_file_path(root_dir):
     p = []
@@ -50,7 +51,7 @@ def get_optimizer(args, model):
         if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
             states = torch.load(
                 os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))
-            # del states['state'] # 8卡改4卡，不加载state
+            # del states['state'] # 不加载state
             # optimizer_state = optimizer.state_dict()
             # optimizer_state.update(states)
             # optimizer.load_state_dict(optimizer_state)
@@ -125,8 +126,11 @@ def valid(model, dev_dataloader, loss_func, step, writer):
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
+
         if bmp.rank() == 0:
             writer.add_scalar("Loss/dev", valid_loss, step)
+            wandb.log({"loss/dev": valid_loss}, step=step)
+
         bmp.print_rank(
                         "{} | Iter: {:6d} | valid  loss: {:.4f}".format(
                             time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
@@ -137,8 +141,16 @@ def valid(model, dev_dataloader, loss_func, step, writer):
     model.train()
 
 def batch_iter(args, dataset):
-    st = args.start_step * args.batch_size
-
+    # 中文模型
+    # st = args.start_step * args.batch_size
+    # st = 16500*128*2+38500*256   #需要手动计算
+    # switch to max_length=256, origin st = 347500, current st = 364000. so pass data st = 364000-347500
+    # 8卡换到4卡, pass st *= 2
+    # 中途停了一次，current st=369500, max_length=256, st+=(369500-364000)*256
+    # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
+    # 英文模型
+    # st = 0  # 从第一个数据开始训练
+    st = 2500
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -167,7 +179,6 @@ def scale_down_model(scale, model, args):
     bmp.print_rank(f"After Scaling:")
     print_inspect(model, "*") 
     model.load_state_dict(new_dict)
-    # bmp.load(model, new_dict)
     return model
 
 
@@ -220,10 +231,16 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             log_loss = 0
 
         if (start_step + step + 1) % args.valid_iters == 0:
-            valid(model, dev_dataloader, loss_func, (start_step + step + 1) // args.gradient_accumulate, writer)
+            valid(model, dev_dataloader, loss_func, start_step + step + 1, writer)
 
         if bmp.rank() == 0:
-            writer.add_scalar("Loss/train", global_loss, (step + start_step + 1) // args.gradient_accumulate)
+            wandb.log({"loss/train": global_loss, 
+                       "grad_norm": grad_norm,
+                       "loss_scale": optim_manager.loss_scale,
+                       "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
+            
+            writer.add_scalar("Loss/train", global_loss, step + start_step + 1)
+
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
             bmp.save(model, os.path.join(args.save, 'checkpoints', "checkpoint-%d.pt" % (step + start_step + 1)))
             # save optimizer
@@ -231,8 +248,22 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))           
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
         
-
+def init_wandb(args):
+    # start a new wandb run to track this script
+    wandb.init(
+        # set the wandb project where this run will be logged
+        project="opensoco",
+        name="en-a100-2",
         
+        # track hyperparameters and run metadata
+        config={
+            "batch_size": args.batch_size,
+            "start_step": args.start_step,
+            "grad_clipping": args.clip_grad,
+            "gradient_accumulate": args.gradient_accumulate,
+            "learning_rate": args.lr
+        }
+    )
 
 def initialize():
     # get arguments
@@ -240,12 +271,7 @@ def initialize():
     # init bmp 
     bmp.print_rank("Init bmp distributed.")
     bmp.init_distributed(seed=args.seed, zero_level=2)
-
     
-    bmp.print_rank("Init torch distributed.")
-    # os.environ['MASTER_ADDR'] = 'localhost'
-    # os.environ['MASTER_PORT'] = '12423'
-    # torch.distributed.init_process_group("gloo", rank=bmp.rank(), world_size=bmp.world_size())
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
@@ -256,7 +282,9 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
+    args.start_step = 360000
     print(args)
+    init_wandb(args)
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
     valid_dataset = get_valid_dataset(args.test_dataset)

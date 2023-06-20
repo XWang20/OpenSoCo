@@ -1,25 +1,21 @@
-#! /bin/bash
+#!/usr/bin/env bash
 
-if [[ $DLS_TASK_NUMBER == 1 ]]; then
-    MASTER_ADDR=localhost
-    MASTER_PORT=12423
-    NNODES=2
-    NODE_RANK=0
-else
-    MASTER_HOST="$BATCH_CUSTOM0_HOSTS"
-    MASTER_ADDR="${MASTER_IP}"
-    MASTER_PORT="${MASTER_PORT}"
-    NNODES=2
-    NODE_RANK="$MARSV2_RANK"
-fi
+export OMP_NUM_THREADS=1
+export CUDA_DEVICE_MAX_CONNECTIONS=1
+export CUDA_VISIBLE_DEVICES=0
 
-GPUS_PER_NODE=8
+MASTER_ADDR=localhost
+MASTER_PORT=12421
+NNODES=1
+NODE_RANK=0
 
-DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
-                  --nnodes $NNODES \
-                  --node_rank $NODE_RANK \
-                  --master_addr $MASTER_ADDR \
-                  --master_port $MASTER_PORT"
+GPUS_PER_NODE=1
+
+DISTRIBUTED_ARGS="--nproc_per_node ${GPUS_PER_NODE} \
+                  --nnodes ${NNODES} \
+                  --node_rank ${NODE_RANK} \
+                  --master_addr ${MASTER_ADDR} \
+                  --master_port ${MASTER_PORT}"
 
 BASE_PATH="/data/private/wangxing/OpenSoCo/bm_train_codes"
 DATA_PATH="/data/private/wangxing/OpenSoCo/"
@@ -43,20 +39,20 @@ OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 1"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size 64"
+OPTS+=" --batch-size 256"
 OPTS+=" --lr 1e-4"
 OPTS+=" --save-iters 2500"
-OPTS+=" --log-iters 50"
-OPTS+=" --gradient-accumulate 2"
+OPTS+=" --log-iters 10"
+OPTS+=" --gradient-accumulate 8"
 OPTS+=" --train-iters 1000000"
 
-
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
+# CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
 echo ${CMD}
 
 mkdir -p ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}
 
-if [[ $NODE_RANK == 0 ]]&&[[ $DLS_TASK_NUMBER == 1 ]]; then
+if [[ $NODE_RANK == 0 ]]; then
     ${CMD} 2>&1 | tee ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed/logs_$(date +"%Y_%m_%d_%H_%M_%S").log
 else
     ${CMD}
