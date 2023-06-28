@@ -8,6 +8,7 @@ from torch.utils.tensorboard import SummaryWriter
 import time
 from arguments import get_args
 from scale_model import scale_roberta_model
+from tokenizer import get_tokenizer
 import os
 
 import wandb
@@ -40,6 +41,11 @@ def get_model(args):
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
         bmp.load(model, os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt"))
     print_inspect(model, "*")
+
+    for name, param in model.named_parameters():
+        if torch.isnan(param).sum() > 0:
+            bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
+            exit(0)
     return model
 
 def get_optimizer(args, model):
@@ -51,14 +57,18 @@ def get_optimizer(args, model):
         if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
             states = torch.load(
                 os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))
+            
+            # if use the momentum, load the "state" in the optimizer state_dict
             optimizer.load_state_dict(states)
-            # 如果不加载optimizer里的动量，使用下面代码
+            
+            # # if dont use the momentum, delete the "state" in the optimizer state_dict
             # del states['state']
             # optimizer_state = optimizer.state_dict()
             # optimizer_state.update(states)
             # optimizer.load_state_dict(optimizer_state)
+
             for name, param in optimizer.state_dict().items():
-                print(name, param)
+                bmp.print_rank(name, param)
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
@@ -98,7 +108,7 @@ def setup_model_and_optimizer(args):
     return model, optimizer, lr_scheduler, optim_manager
 
 def get_train_dataset(args):
-    print(bmp.rank(), bmp.world_size())
+    bmp.print_rank(bmp.rank(), bmp.world_size())
     input_ids_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'input_ids', bmp.rank(), bmp.world_size())
     lm_pos_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'lm_pos', bmp.rank(), bmp.world_size())
     masked_labels_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'masked_labels', bmp.rank(), bmp.world_size())
@@ -129,8 +139,8 @@ def valid(model, dev_dataloader, loss_func, step, writer):
             valid_loss += global_loss
 
         if bmp.rank() == 0:
-            writer.add_scalar("Loss/dev", valid_loss, step)
-            wandb.log({"loss/dev": valid_loss}, step=step)
+            writer.add_scalar("Loss/dev", valid_loss/len(dev_dataloader), step)
+            wandb.log({"loss/dev": valid_loss/len(dev_dataloader)}, step=step)
 
         bmp.print_rank(
                         "{} | Iter: {:6d} | valid  loss: {:.4f}".format(
@@ -151,7 +161,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = args.start_step * args.batch_size - 357500
+    st = (args.start_step - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -180,14 +190,15 @@ def scale_down_model(scale, model, args):
     bmp.print_rank(f"After Scaling:")
     print_inspect(model, "*") 
     model.load_state_dict(new_dict)
-    if torch.isnan(model.mu).sum() != 0:
-        if bmp.rank() == 0:
-            wandb.alert(
-                title="Nan model parameter.",
-                text="inspect nan parameter after scaling model. stop training.",
-                level=wandb.AlertLevel.ERROR
-            )
-            print("Nan model parameter inspected.")
+    for name, param in model.named_parameters():
+        if torch.isnan(param).sum() > 0:
+            if bmp.rank() == 0:
+                wandb.alert(
+                    title="NaN values found in model.",
+                    text=f"find nan values in parameter {name} after scaling model. stop training.",
+                    level=wandb.AlertLevel.ERROR
+                )
+            bmp.print_rank(f"NaN values found in parameter {name}. ")
             exit(0)
     return model
 
@@ -196,6 +207,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
     start_step = args.start_step
+    skip_step = 0
     log_loss = 0
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
@@ -220,17 +232,35 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         # step optimizer
         if (start_step + step + 1) % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
-            try:
-                optim_manager.step()
-            except:
-                # if step failed, stop training
+            if torch.isnan(grad_norm):
+                # if nan loss inspected, skip the current step
+                skip_step += 1
+                optim_manager.zero_grad()
                 if bmp.rank() == 0:
+                    tokenizer = get_tokenizer()
                     wandb.alert(
-                        title="failed to step.",
-                        text="failed to step. stop training.",
-                        level=wandb.AlertLevel.ERROR
+                        title="Nan loss inspected.",
+                        text=f'''inspected nan loss. skip the current step.\n
+                                step: {step+start_step+1}\n
+                                text: {tokenizer.batch_decode(data['input_ids'])}\n
+                                input_ids: {data['input_ids']}\n
+                                attention_mask: {data['attention_mask']}\n
+                                labels: {data['attention_mask']}\n''',
+                        level=wandb.AlertLevel.WARN
                     )
-                exit(0)
+            else:
+                try:
+                    optim_manager.step()
+                    skip_step = 0
+                except:
+                    # if step failed, stop training
+                    if bmp.rank() == 0:
+                        wandb.alert(
+                            title="failed to step.",
+                            text="failed to step. stop training.",
+                            level=wandb.AlertLevel.ERROR
+                        )
+                    exit(0)
 
             # update the training state to wandb 
             if bmp.rank() == 0:
@@ -241,12 +271,12 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 
                 writer.add_scalar("Loss/train", global_loss, step + start_step + 1)
 
-            # if nan loss inspected, scale down the model
-            if torch.isnan(grad_norm):
+            # if skip step > 10 and still inspect nan loss, then scale down the model
+            if skip_step > 10 and torch.isnan(grad_norm):
                 if bmp.rank() == 0:
                     wandb.alert(
                         title="Nan loss inspected.",
-                        text="inspect nan loss. scale model by factor 10.",
+                        text="inspected nan loss. scale model by factor 10.",
                         level=wandb.AlertLevel.WARN
                     )
                 model = scale_down_model(scale = 10.0, model = model, args = args)
@@ -281,18 +311,20 @@ def init_wandb(args):
         wandb.init(
             # set the wandb project where this run will be logged
             project="opensoco",
-            name="en-real-107-run-3",
-            id="zu1tvxa8"
+            name="en-real-107-run-7",
+            notes="start training from 337500 step. try skip nan grad.",
+            id="8eoah61x",
             
-            # # track hyperparameters and run metadata
-            # config={
-            #     "batch_size": args.batch_size,
-            #     "start_step": args.start_step,
-            #     "grad_clipping": args.clip_grad,
-            #     "gradient_accumulate": args.gradient_accumulate,
-            #     "learning_rate": args.lr,
-            #     "gpu": args.gpu
-            # }
+            # track hyperparameters and run metadata
+            config={
+                "batch_size": args.batch_size,
+                "start_step": args.start_step,
+                "grad_clipping": args.clip_grad,
+                "gradient_accumulate": args.gradient_accumulate,
+                "learning_rate": args.lr,
+                "adam_betas": 0.98,
+                "gpu": 4,
+            }
         )
 
 def initialize():
@@ -312,8 +344,8 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 365000
-    print(args)
+    args.start_step = 339500
+    bmp.print_rank(args)
     init_wandb(args)
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
