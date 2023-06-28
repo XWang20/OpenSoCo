@@ -126,7 +126,7 @@ def get_valid_dataset(dataset_path):
 
     return bert_dataset
 
-def valid(model, dev_dataloader, loss_func, step, writer):
+def valid(args, model, dev_dataloader, loss_func, step, writer):
     model.eval()
     valid_loss = 0
     with torch.no_grad():
@@ -139,8 +139,10 @@ def valid(model, dev_dataloader, loss_func, step, writer):
             valid_loss += global_loss
 
         if bmp.rank() == 0:
-            writer.add_scalar("Loss/dev", valid_loss/len(dev_dataloader), step)
-            wandb.log({"loss/dev": valid_loss/len(dev_dataloader)}, step=step)
+            if args.report_to == "wandb":
+                writer.add_scalar("loss/dev", valid_loss/len(dev_dataloader), step)
+            elif args.report_to == "tensorboard":
+                wandb.log({"loss/dev": valid_loss/len(dev_dataloader)}, step=step)
 
         bmp.print_rank(
                         "{} | Iter: {:6d} | valid  loss: {:.4f}".format(
@@ -192,7 +194,7 @@ def scale_down_model(scale, model, args):
     model.load_state_dict(new_dict)
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
-            if bmp.rank() == 0:
+            if args.report_to == "wandb" and bmp.rank() == 0:
                 wandb.alert(
                     title="NaN values found in model.",
                     text=f"find nan values in parameter {name} after scaling model. stop training.",
@@ -211,11 +213,17 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     log_loss = 0
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
-    if bmp.rank() == 0:
-        writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
-    else:
-        writer = None
-    valid(model, dev_dataloader, loss_func, start_step // args.gradient_accumulate, writer)
+
+    # report training log to or tensorboard
+    if args.report_to == "tensorboard":
+        if bmp.rank() == 0:
+            writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
+        else:
+            writer = None
+
+    # evaluate model before training
+    valid(args, model, dev_dataloader, loss_func, start_step, writer)
+
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
             optim_manager.zero_grad() # when not doing
@@ -236,7 +244,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 # if nan loss inspected, skip the current step
                 skip_step += 1
                 optim_manager.zero_grad()
-                if bmp.rank() == 0:
+                bmp.print_rank(f"Nan loss inspected. Skip the current step. Total skip step: {skip_step}")
+                if args.report_to == "wandb" and bmp.rank() == 0:
                     tokenizer = get_tokenizer()
                     wandb.alert(
                         title="Nan loss inspected.",
@@ -254,7 +263,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     skip_step = 0
                 except:
                     # if step failed, stop training
-                    if bmp.rank() == 0:
+                    if args.report_to == "wandb" and bmp.rank() == 0:
                         wandb.alert(
                             title="failed to step.",
                             text="failed to step. stop training.",
@@ -262,14 +271,18 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                         )
                     exit(0)
 
-            # update the training state to wandb 
+            # update the training state to the integrations
             if bmp.rank() == 0:
-                wandb.log({"loss/train": global_loss, 
-                        "grad_norm": grad_norm,
-                        "loss_scale": optim_manager.loss_scale,
-                        "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
-                
-                writer.add_scalar("Loss/train", global_loss, step + start_step + 1)
+                if args.report_to == "wandb":
+                    wandb.log({"loss/train": global_loss, 
+                            "grad_norm": grad_norm,
+                            "loss_scale": optim_manager.loss_scale,
+                            "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
+                elif args.report_to == "tensorboard":
+                    writer.add_scalar("loss/train", global_loss, step + start_step + 1)
+                    writer.add_scalar("grad_norm", grad_norm, step + start_step + 1)
+                    writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
+                    writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
             # if skip step > 10 and still inspect nan loss, then scale down the model
             if skip_step > 10 and torch.isnan(grad_norm):
@@ -346,7 +359,11 @@ def main():
         args.start_step = last_step
     args.start_step = 339500
     bmp.print_rank(args)
-    init_wandb(args)
+
+    # init wandb
+    if args.report_to == "wandb":
+        init_wandb(args)
+
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
     valid_dataset = get_valid_dataset(args.test_dataset)

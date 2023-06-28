@@ -45,6 +45,7 @@ OPTS+=" --save-iters 500"
 OPTS+=" --log-iters 10"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
+OPTS+=" --report-to wandb"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
 # CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
