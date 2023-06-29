@@ -14,6 +14,22 @@ ls /mnt/data/user/tc_agi/user/wangxing
 #     NNODES="${WORLD_SIZE}"
 #     NODE_RANK="${RANK}"
 # fi
+
+# MASTER_ADDR=localhost
+# MASTER_PORT=12423
+# NNODES=1
+# NODE_RANK=0
+
+# GPUS_PER_NODE=8
+
+# DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
+#                   --nnodes $NNODES \
+#                   --node_rank $NODE_RANK \
+#                   --master_addr $MASTER_ADDR \
+#                   --master_port $MASTER_PORT"
+
+GPUS_PER_NODE=8
+
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
@@ -27,19 +43,6 @@ if [ ${IDC} == klara-2-pek02 ]; then
                     --rdzv_backend=c10d \
                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
 fi
-
-# MASTER_ADDR=localhost
-# MASTER_PORT=12423
-# NNODES=1
-# NODE_RANK=0
-
-GPUS_PER_NODE=8
-
-DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
-                  --nnodes $NNODES \
-                  --node_rank $NODE_RANK \
-                  --master_addr $MASTER_ADDR \
-                  --master_port $MASTER_PORT"
 
 BASE_PATH="."
 DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
