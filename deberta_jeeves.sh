@@ -11,7 +11,8 @@ rm -rf /data/tensorboard/*
 rm -rf /data/results/*
 rm -rf /data/checkpoints/*
 rm -rf /data/models/*
-ll -ch /data
+du -h -max-depth=1 /data
+ls -l -ch /data
 
 GPUS_PER_NODE=8
 
