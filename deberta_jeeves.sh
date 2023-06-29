@@ -1,20 +1,26 @@
 #! /bin/bash
 
-if [[ ${IDC} == luca-dev-pek02 ]]; then
-    MASTER_ADDR=localhost
-    MASTER_PORT=12423
-    NNODES=2
-    NODE_RANK=0
-else
-    MASTER_HOST="${NODE_NAME}"
-    MASTER_ADDR="${MASTER_ADDR}"
-    MASTER_PORT="${MASTER_PORT}"
-    NNODES=2
-    NODE_RANK="${RANK}"
-fi
+pip install model_center==0.1.3
 
+# if [[ ${IDC} == luca-dev-pek02 ]]; then
+#     MASTER_ADDR=localhost
+#     MASTER_PORT=12423
+#     NNODES=2
+#     NODE_RANK=0
+# else
+#     MASTER_HOST="${NODE_NAME}"
+#     MASTER_ADDR="${MASTER_ADDR}"
+#     MASTER_PORT="${MASTER_PORT}"
+#     NNODES=2
+#     NODE_RANK="${RANK}"
+# fi
 
-GPUS_PER_NODE=1
+MASTER_ADDR=localhost
+MASTER_PORT=12423
+NNODES=1
+NODE_RANK=0
+
+GPUS_PER_NODE=8
 
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --nnodes $NNODES \
@@ -23,8 +29,8 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="."
-DATA_PATH="/data"
-SAVE_PATH="/data/OpenSoCo/save"
+DATA_PATH="/mnt/data/user/tc_agi/wangxing"
+SAVE_PATH="/mnt/data/user/tc_agi/wangxing/save"
 DATASET_NAME="OpenSoCo_en"
 TEST_DATASET="OpenSoCo_en"
 CONFIG="deberta_prenorm"
