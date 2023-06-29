@@ -8,33 +8,33 @@ ls /mnt/data/user/tc_agi/user/wangxing
 
 GPUS_PER_NODE=8
 
-# if [[ ${NODE_NAME} =~ master ]]; then
-#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
-#                     --nproc_per_node=${GPUS_PER_NODE} \
-#                     --node_rank=${RANK} \
-#                     --master_addr=${MASTER_ADDR} \
-#                     --master_port=${MASTER_PORT}"
-# else
-#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
-#                     --nproc_per_node=${GPUS_PER_NODE} \
-#                     --rdzv_id=1 \
-#                     --rdzv_backend=c10d \
-#                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
-# fi
-
-if [ ${IDC} == klara-2-pek02 ]; then
+if [[ ${NODE_NAME} =~ master ]]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
                     --node_rank=${RANK} \
-                    --master_addr=${MASTER_ENDPOINT} \
+                    --master_addr=${MASTER_ADDR} \
                     --master_port=${MASTER_PORT}"
-    else
+else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
                     --rdzv_id=1 \
                     --rdzv_backend=c10d \
                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
 fi
+
+# if [ ${IDC} == klara-2-pek02 ]; then
+#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
+#                     --nproc_per_node=${GPUS_PER_NODE} \
+#                     --node_rank=${RANK} \
+#                     --master_addr=${MASTER_ENDPOINT} \
+#                     --master_port=${MASTER_PORT}"
+#     else
+#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
+#                     --nproc_per_node=${GPUS_PER_NODE} \
+#                     --rdzv_id=1 \
+#                     --rdzv_backend=c10d \
+#                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
+# fi
 
 
 BASE_PATH="."
