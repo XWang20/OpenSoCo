@@ -204,7 +204,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step - 357500) * 256 // 4
+    st = (args.start_step - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -259,7 +259,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         from torch.utils.tensorboard import SummaryWriter
         # report training log to or tensorboard
         if bmp.rank() == 0:
-            writer = SummaryWriter(os.path.join(args.save, 'tensorboards'))
+            writer = SummaryWriter(os.path.join(args.save, 'tensorboard'))
         else:
             writer = None
 
@@ -351,7 +351,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             log_loss = 0
 
         if (start_step + step + 1) % args.valid_iters == 0:
-            valid(model, dev_dataloader, loss_func, start_step + step + 1, writer)
+            valid(args, model, dev_dataloader, loss_func, start_step + step + 1, writer)
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
@@ -360,7 +360,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
                 bmp.save(model, os.path.join(args.save, model_path))
 
-                if args.hdfs_save:
+                if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
                     os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
 
             # save optimizer
@@ -368,7 +368,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
-            if args.hdfs_save:
+            if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
                 os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, optimizer_path)}")
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
