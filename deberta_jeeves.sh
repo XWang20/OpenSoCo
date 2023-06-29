@@ -1,29 +1,30 @@
 #! /bin/bash
 
-if [[ ${MASTER_PORT} = master ]]; then
+if [[ ${IDC} == luca-dev-pek02 ]]; then
     MASTER_ADDR=localhost
     MASTER_PORT=12423
-    NNODES=2
+    NNODES=1
     NODE_RANK=0
 else
     MASTER_HOST="${NODE_NAME}"
     MASTER_ADDR="${MASTER_ADDR}"
     MASTER_PORT="${MASTER_PORT}"
-    NNODES=2
+    NNODES=1
     NODE_RANK="${RANK}"
 fi
 
-GPUS_PER_NODE=8
+
+GPUS_PER_NODE=1
 
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --nnodes $NNODES \
-                  --node_rank $RANK \
+                  --node_rank $NODE_RANK \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="/data/OpenSoCo"
-DATA_PATH="/data/OpenSoCo/"
-SAVE_PATH="/data/models"
+DATA_PATH="/data"
+SAVE_PATH="/data/OpenSoCo/save"
 DATASET_NAME="OpenSoCo_en"
 TEST_DATASET="OpenSoCo_en"
 CONFIG="deberta_prenorm"
@@ -32,7 +33,7 @@ OPTS=""
 OPTS+=" --vocab-file ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --model-config ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --input-dataset ${DATA_PATH}/${DATASET_NAME}/"
-OPTS+=" --test-dataset ${BASE_PATH}/valid/${TEST_DATASET}/"
+OPTS+=" --test-dataset ${DATA_PATH}/valid/${TEST_DATASET}/"
 OPTS+=" --save ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 
 OPTS+=" --load init_checkpoint/deberta-bmtrain.pt"
@@ -49,6 +50,7 @@ OPTS+=" --save-iters 2500"
 OPTS+=" --log-iters 50"
 OPTS+=" --gradient-accumulate 1"
 OPTS+=" --train-iters 1000000"
+OPTS+=" --report_to tensorboard"
 
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
