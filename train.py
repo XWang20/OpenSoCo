@@ -33,7 +33,7 @@ def get_model(args):
     model = Roberta(config)
 
     # make checkpoint dir
-    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'checkpoints')}")
+    # os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'checkpoints')}")
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
 
     if (args.load != None) and (args.start_step == 0):
@@ -56,8 +56,8 @@ def get_optimizer(args, model):
                                                 betas = (0.9, 0.95),
                                                 weight_decay=args.weight_decay)
 
-    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
-    os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
+    # os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
+    os.makedirs(os.path.join(args.save, 'checkpoints', 'optimizers'), exist_ok=True)
 
     if args.load is not None:
         bmp.print_rank("Loading the optimizer...")
@@ -366,7 +366,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             # save optimizer
             optimizer_path = os.path.join("optimizers", "optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
 
-            torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
+            torch.save(optimizer.state_dict(), os.path.join(args.save, "checkpoints", optimizer_path))
 
             if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
                 os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, optimizer_path)}")
@@ -405,8 +405,8 @@ def initialize():
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
 
-        if args.hdfs_save != None:
-            os.system(f"hdfs dfs -mkdir {args.hdfs_save}")
+        # if args.hdfs_save != None:
+        #     os.system(f"hdfs dfs -mkdir {args.hdfs_save}")
 
     return args
 
@@ -426,6 +426,7 @@ def main():
         import wandb
         init_wandb(args)
 
+    import json
     platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
     args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"]
 

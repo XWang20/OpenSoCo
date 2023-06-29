@@ -6,11 +6,6 @@ export HADOOP_USER_PASSWORD=IH2U3AS1D
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-rm -rf /data/logs/*
-rm -rf /data/tensorboard/*
-rm -rf /data/results/*
-rm -rf /data/checkpoints/*
-rm -rf /data/models/*
 du -h --max-depth=1 /data
 ls -l -ch /data
 
