@@ -31,12 +31,23 @@ def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
     assert isinstance(config, RobertaConfig)
     model = Roberta(config)
-    if (args.load != None) and (get_last_step(args, 0) == 0):
+
+    # make checkpoint dir
+    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'checkpoints')}")
+    os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
+
+    if (args.load != None) and (args.start_step == 0):
         bmp.print_rank(f"Loading from checkpoint {args.load}...")
         bmp.load(model, args.load)
     else:
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
+        ckpt_path = os.path.join("checkpoints", f"checkpoint-{args.start_step}.pt")
+        if args.hdfs_save:
+            bmp.print_rank(f"Downlowding file from HDFS to local.")
+            os.system(f"hdfs dfs -get {os.path.join(args.hdfs_save, ckpt_path)} {os.path.join(args.save, ckpt_path)}")
+            bmp.print_rank(f"Finish downlowding! Start Loading from local file.")
         bmp.load(model, os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt"))
+
     print_inspect(model, "*")
 
     for name, param in model.named_parameters():
@@ -50,6 +61,10 @@ def get_optimizer(args, model):
                                                 lr = 5e-4,
                                                 betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
+
+    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
+    os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
+
     if args.load is not None:
         if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
             states = torch.load(
@@ -208,10 +223,6 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     start_step = args.start_step
     skip_step = 0
     log_loss = 0
-    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'checkpoints')}")
-    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
-    os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
-    os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
 
     if args.report_to == "tensorboard":
         from torch.utils.tensorboard import SummaryWriter
@@ -369,9 +380,13 @@ def initialize():
 
 def main():
     args = initialize()
-    last_step = get_last_step(args, args.start_step)
-    if last_step > args.start_step:
-        args.start_step = last_step
+
+    # # get last checkpoint step
+    # last_step = get_last_step(args, args.start_step)
+    # if last_step > args.start_step:
+    #     args.start_step = last_step
+
+    args.start_step = 348500
     bmp.print_rank(args)
 
     # init wandb and tensorboard
