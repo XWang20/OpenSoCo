@@ -3,13 +3,13 @@
 if [[ ${IDC} == luca-dev-pek02 ]]; then
     MASTER_ADDR=localhost
     MASTER_PORT=12423
-    NNODES=1
+    NNODES=2
     NODE_RANK=0
 else
     MASTER_HOST="${NODE_NAME}"
     MASTER_ADDR="${MASTER_ADDR}"
     MASTER_PORT="${MASTER_PORT}"
-    NNODES=1
+    NNODES=2
     NODE_RANK="${RANK}"
 fi
 
