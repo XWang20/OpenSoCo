@@ -345,9 +345,9 @@ def initialize():
     bmp.print_rank("Init bmp distributed.")
     bmp.init_distributed(seed=args.seed, zero_level=2)
     
-    # init save folder
-    if args.save != None:
-        os.makedirs(args.save, exist_ok=True)
+    # # init save folder
+    # if args.save != None:
+    #     os.makedirs(args.save, exist_ok=True)
 
     return args
 
