@@ -249,7 +249,7 @@ def scale_down_model(scale, model, args):
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
+    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
