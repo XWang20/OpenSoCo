@@ -40,7 +40,7 @@ OPTS=""
 OPTS+=" --vocab-file ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --model-config ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --input-dataset ${DATA_PATH}/${DATASET_NAME}/"
-OPTS+=" --test-dataset ${DATA_PATH}/valid/${TEST_DATASET}/"
+OPTS+=" --test-dataset ${DATA_PATH}/${TEST_DATASET}/"
 OPTS+=" --save ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 OPTS+=" --hdfs-save ${HDFS_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 
