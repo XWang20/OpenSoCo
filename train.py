@@ -4,14 +4,11 @@ from model_center.model import Roberta, RobertaConfig
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
 from model_center.utils import print_inspect
 from dataset import BertDataset
-from torch.utils.tensorboard import SummaryWriter
 import time
 from arguments import get_args
 from scale_model import scale_roberta_model
 from tokenizer import get_tokenizer
 import os
-
-import wandb
 
 def get_file_path(root_dir):
     p = []
@@ -214,12 +211,14 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
 
-    # report training log to or tensorboard
     if args.report_to == "tensorboard":
-        if bmp.rank() == 0:
-            writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
-        else:
-            writer = None
+        from torch.utils.tensorboard import SummaryWriter
+        # report training log to or tensorboard
+        if args.report_to == "tensorboard":
+            if bmp.rank() == 0:
+                writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
+            else:
+                writer = None
 
     # evaluate model before training
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
@@ -326,7 +325,6 @@ def init_wandb(args):
             project="opensoco",
             name="en-real-107-run-7",
             notes="start training from 337500 step. try skip nan grad.",
-            id="8eoah61x",
             
             # track hyperparameters and run metadata
             config={
@@ -350,6 +348,7 @@ def initialize():
     # init save folder
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
+
     return args
 
 def main():
@@ -357,11 +356,11 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 339500
     bmp.print_rank(args)
 
-    # init wandb
+    # init wandb and tensorboard
     if args.report_to == "wandb":
+        import wandb
         init_wandb(args)
 
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)

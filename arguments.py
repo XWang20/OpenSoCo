@@ -71,6 +71,10 @@ def add_training_args(parser: argparse.ArgumentParser):
     group.add_argument('--local_rank', type=int, default=None,
                        help='local rank passed from distributed launcher')
 
+    # training log 
+    group.add_argument('--report_to', type=str, default="wandb",
+                       help='The list of integrations to report the results and logs to. Supported platforms are "tensorboard" and "wandb". If set to None, no integrations will be used.')
+
     return parser
 
 
