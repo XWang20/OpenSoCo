@@ -3,15 +3,15 @@
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-# if [[ ${IDC} == luca-dev-pek02 ]]; then
+# if [[ ${NODE_NAME} == luca-dev-pek02 ]]; then
 #     MASTER_ADDR=localhost
 #     MASTER_PORT=12423
 #     NNODES=2
 #     NODE_RANK=0
 # else
-#     MASTER_HOST="${NODE_NAME}"
+#     MASTER_HOST="${HOSTNAME}"
 #     MASTER_ADDR="${MASTER_ADDR}"
-#     MASTER_PORT="${MASTER_PORT}"
+#     MASTER_PORT=12423
 #     NNODES=2
 #     NODE_RANK="${RANK}"
 # fi
@@ -56,8 +56,8 @@ OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size 256"
 OPTS+=" --lr 1e-4"
-OPTS+=" --save-iters 2500"
-OPTS+=" --log-iters 50"
+OPTS+=" --save-iters 50"
+OPTS+=" --log-iters 10"
 OPTS+=" --gradient-accumulate 1"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"

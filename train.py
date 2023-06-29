@@ -232,7 +232,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         from torch.utils.tensorboard import SummaryWriter
         # report training log to or tensorboard
         if bmp.rank() == 0:
-            writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
+            writer = SummaryWriter(os.path.join(args.save, 'tensorboards'))
         else:
             writer = None
 
