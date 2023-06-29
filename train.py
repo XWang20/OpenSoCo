@@ -391,7 +391,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 348500
+    args.start_step = 337500
     bmp.print_rank(args)
 
     # init wandb and tensorboard
