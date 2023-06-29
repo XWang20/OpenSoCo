@@ -328,15 +328,17 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
-            # save checkpoint
-            model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
-            bmp.save(model, os.path.join(args.save, model_path))
+            if bmp.rank() == 0:
+                # save checkpoint
+                model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
+                bmp.save(model, os.path.join(args.save, model_path))
 
-            if args.hdfs_save:
-                os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
+                if args.hdfs_save:
+                    os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
 
             # save optimizer
-            optimizer_path = os.path.join('optimizers', "optimizer.rank-%d.opt" % (bmp.rank()))
+            optimizer_path = os.path.join("optimizers", "optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
+
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
             if args.hdfs_save:
