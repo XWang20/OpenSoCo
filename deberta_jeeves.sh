@@ -3,23 +3,23 @@
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-# if [[ ${NODE_NAME} == luca-dev-pek02 ]]; then
-#     MASTER_ADDR=localhost
-#     MASTER_PORT=12423
-#     NNODES=2
-#     NODE_RANK=0
-# else
-#     MASTER_HOST="${HOSTNAME}"
-#     MASTER_ADDR="${MASTER_ADDR}"
-#     MASTER_PORT=12423
-#     NNODES=2
-#     NODE_RANK="${RANK}"
-# fi
+if [[ ${NODE_NAME} =~ master ]]; then
+    MASTER_ADDR=localhost
+    MASTER_PORT="${MASTER_PORT}"
+    NNODES="${WORLD_SIZE}"
+    NODE_RANK=0
+else
+    MASTER_HOST="${HOSTNAME}"
+    MASTER_ADDR="${MASTER_ADDR}"
+    MASTER_PORT="${MASTER_PORT}"
+    NNODES="${WORLD_SIZE}"
+    NODE_RANK="${RANK}"
+fi
 
-MASTER_ADDR=localhost
-MASTER_PORT=12423
-NNODES=1
-NODE_RANK=0
+# MASTER_ADDR=localhost
+# MASTER_PORT=12423
+# NNODES=1
+# NODE_RANK=0
 
 GPUS_PER_NODE=8
 
@@ -54,7 +54,7 @@ OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 0.3"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size 256"
+OPTS+=" --batch-size 128"
 OPTS+=" --lr 1e-4"
 OPTS+=" --save-iters 50"
 OPTS+=" --log-iters 10"
