@@ -208,6 +208,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     start_step = args.start_step
     skip_step = 0
     log_loss = 0
+    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'checkpoints')}")
+    os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
     os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
 
@@ -311,10 +313,21 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             valid(model, dev_dataloader, loss_func, start_step + step + 1, writer)
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
-            bmp.save(model, os.path.join(args.save, 'checkpoints', "checkpoint-%d.pt" % (step + start_step + 1)))
+
+            # save checkpoint
+            model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
+            bmp.save(model, os.path.join(args.save, model_path))
+
+            if args.hdfs_save:
+                os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
+
             # save optimizer
-            torch.save(optimizer.state_dict(),
-                os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))           
+            optimizer_path = os.path.join('optimizers', "optimizer.rank-%d.opt" % (bmp.rank()))
+            torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
+
+            if args.hdfs_save:
+                os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, optimizer_path)}")
+
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
         
 def init_wandb(args):
@@ -345,9 +358,12 @@ def initialize():
     bmp.print_rank("Init bmp distributed.")
     bmp.init_distributed(seed=args.seed, zero_level=2)
     
-    # # init save folder
-    # if args.save != None:
-    #     os.makedirs(args.save, exist_ok=True)
+    # init save folder
+    if args.save != None:
+        os.makedirs(args.save, exist_ok=True)
+
+        if args.hdfs_save != None:
+            os.system(f"hdfs dfs -mkdir {args.hdfs_save}")
 
     return args
 
