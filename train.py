@@ -155,9 +155,9 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             valid_loss += global_loss
 
         if bmp.rank() == 0:
-            if args.report_to == "wandb":
+            if args.report_to == "tensorboard":
                 writer.add_scalar("loss/dev", valid_loss/len(dev_dataloader), step)
-            elif args.report_to == "tensorboard":
+            elif args.report_to == "wandb":
                 wandb.log({"loss/dev": valid_loss/len(dev_dataloader)}, step=step)
 
         bmp.print_rank(
@@ -231,11 +231,10 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     if args.report_to == "tensorboard":
         from torch.utils.tensorboard import SummaryWriter
         # report training log to or tensorboard
-        if args.report_to == "tensorboard":
-            if bmp.rank() == 0:
-                writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
-            else:
-                writer = None
+        if bmp.rank() == 0:
+            writer = SummaryWriter(os.path.join(args.save, 'tensorborads'))
+        else:
+            writer = None
 
     # evaluate model before training
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
