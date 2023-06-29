@@ -22,7 +22,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_addr $MASTER_ADDR \
                   --master_port $MASTER_PORT"
 
-BASE_PATH="/data/OpenSoCo"
+BASE_PATH="."
 DATA_PATH="/data"
 SAVE_PATH="/data/OpenSoCo/save"
 DATASET_NAME="OpenSoCo_en"
