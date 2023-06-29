@@ -21,7 +21,7 @@ MASTER_PORT=12423
 NNODES=1
 NODE_RANK=0
 
-GPUS_PER_NODE=1
+GPUS_PER_NODE=8
 
 DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --nnodes $NNODES \
@@ -31,7 +31,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
 
 BASE_PATH="."
 DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
-SAVE_PATH="/data/save"
+SAVE_PATH="/data/"
 HDFS_PATH="/user/tc_agi/user/wangxing/save"
 DATASET_NAME="OpenSoCo_en"
 TEST_DATASET="OpenSoCo_en"
@@ -41,8 +41,9 @@ OPTS=""
 OPTS+=" --vocab-file ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --model-config ${BASE_PATH}/config/${CONFIG}.json"
 OPTS+=" --input-dataset ${DATA_PATH}/${DATASET_NAME}/"
-OPTS+=" --test-dataset ${DATA_PATH}/${TEST_DATASET}/"
-OPTS+=" --save ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
+OPTS+=" --test-dataset ${DATA_PATH}/valid/${TEST_DATASET}/"
+OPTS+=" --load-path ${DATA_PATH}/save/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
+OPTS+=" --save ${SAVE_PATH}"
 OPTS+=" --hdfs-save ${HDFS_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 
 OPTS+=" --load init_checkpoint/deberta-bmtrain.pt"
@@ -53,7 +54,7 @@ OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 1"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size 64"
+OPTS+=" --batch-size 256"
 OPTS+=" --lr 1e-4"
 OPTS+=" --save-iters 2500"
 OPTS+=" --log-iters 50"

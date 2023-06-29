@@ -29,6 +29,8 @@ def add_training_args(parser: argparse.ArgumentParser):
                        help='Path to a directory containing a model checkpoint.')
     group.add_argument('--save', type=str, default=None,
                        help='Output directory to save checkpoints to.')
+    group.add_argument('--load-path', type=str, default=None,
+                       help='ckpt and optim path')
     group.add_argument('--hdfs-save', type=str, default=None,
                        help='HDFS output directory to save checkpoints.')
     group.add_argument('--save-iters', type=int, default=1000,

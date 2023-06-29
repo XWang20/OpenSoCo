@@ -42,13 +42,7 @@ def get_model(args):
     else:
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
         ckpt_path = os.path.join("checkpoints", f"checkpoint-{args.start_step}.pt")
-        if args.hdfs_save:
-            bmp.print_rank(f"Downlowding file from HDFS to local.")
-            os.system(f"hdfs dfs -get {os.path.join(args.hdfs_save, ckpt_path)} {os.path.join(args.save, ckpt_path)}")
-            bmp.print_rank(f"Finish downlowding! Start Loading from local file.")
-        bmp.load(model, os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt"))
-
-    # print_inspect(model, "*")
+        bmp.load(model, os.path.join(args.load_path, "checkpoints", f"checkpoint-{args.start_step}.pt"))
 
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
@@ -68,10 +62,7 @@ def get_optimizer(args, model):
     if args.load is not None:
         bmp.print_rank("Loading the optimizer...")
         optim_path = os.path.join('optimizers', "optimizer.rank-%d.opt" % 0)
-
-        bmp.print_rank("Downloading the optimizer from the HDFS...")
-        os.system(f"hdfs dfs -get {os.path.join(args.hdfs_save, optim_path)} {os.path.join(args.save, optim_path)}")
-
+        
         if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
             
             # # if use the momentum, load optimizer
@@ -84,7 +75,7 @@ def get_optimizer(args, model):
 
             # if dont use the momentum, delete the "state" in the optimizer state_dict
             states = torch.load(
-                os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0))
+                os.path.join(args.load_path, 'optimizers', "optimizer.rank-%d.opt" % 0))
 
             del states['state']
             optimizer_state = optimizer.state_dict()
