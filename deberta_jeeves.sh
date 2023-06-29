@@ -29,7 +29,7 @@ DISTRIBUTED_ARGS="--nproc_per_node $GPUS_PER_NODE \
                   --master_port $MASTER_PORT"
 
 BASE_PATH="."
-DATA_PATH="/data/user/tc_agi/wangxing"
+DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
 SAVE_PATH="/data/save"
 HDFS_PATH="/user/tc_agi/user/wangxing/save"
 DATASET_NAME="OpenSoCo_en"

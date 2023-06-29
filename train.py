@@ -48,7 +48,7 @@ def get_model(args):
             bmp.print_rank(f"Finish downlowding! Start Loading from local file.")
         bmp.load(model, os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt"))
 
-    print_inspect(model, "*")
+    # print_inspect(model, "*")
 
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
@@ -66,21 +66,34 @@ def get_optimizer(args, model):
     os.makedirs(os.path.join(args.save, 'optimizers'), exist_ok=True)
 
     if args.load is not None:
+        bmp.print_rank("Loading the optimizer...")
+        optim_path = os.path.join('optimizers', "optimizer.rank-%d.opt" % 0)
+
+        bmp.print_rank("Downloading the optimizer from the HDFS...")
+        os.system(f"hdfs dfs -get {os.path.join(args.hdfs_save, optim_path)} {os.path.join(args.save, optim_path)}")
+
         if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
+            
+            # # if use the momentum, load optimizer
+            # states = torch.load(
+            #     os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))
+            
+            # # if use the momentum, load the "state" in the optimizer state_dict
+            # optimizer.load_state_dict(states)
+            
+
+            # if dont use the momentum, delete the "state" in the optimizer state_dict
             states = torch.load(
-                os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))
-            
-            # if use the momentum, load the "state" in the optimizer state_dict
-            optimizer.load_state_dict(states)
-            
-            # # if dont use the momentum, delete the "state" in the optimizer state_dict
-            # del states['state']
-            # optimizer_state = optimizer.state_dict()
-            # optimizer_state.update(states)
-            # optimizer.load_state_dict(optimizer_state)
+                os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0))
+
+            del states['state']
+            optimizer_state = optimizer.state_dict()
+            optimizer_state.update(states)
+            optimizer.load_state_dict(optimizer_state)
 
             for name, param in optimizer.state_dict().items():
                 bmp.print_rank(name, param)
+                
     return optimizer
 
 def get_learning_rate_scheduler(args, optimizer):
@@ -175,7 +188,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step - 357500) * args.batch_size
+    st = (args.start_step - 357500) * 256 // 2
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -199,10 +212,10 @@ def batch_iter(args, dataset):
 
 def scale_down_model(scale, model, args):
     bmp.print_rank(f"Nan loss inspected. Now scaling down the model with factor 10.0...\nBefore Scaling:")
-    print_inspect(model, "*")
+    # print_inspect(model, "*")
     new_dict = scale_roberta_model(scale, model, config_file = args.model_config)
-    bmp.print_rank(f"After Scaling:")
-    print_inspect(model, "*") 
+    # bmp.print_rank(f"After Scaling:")
+    # print_inspect(model, "*") 
     model.load_state_dict(new_dict)
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
