@@ -74,12 +74,12 @@ def get_optimizer(args, model):
             
 
             # if dont use the momentum, delete the "state" in the optimizer state_dict
-            optimizer_state = torch.load(
+            states = torch.load(
                 os.path.join(args.load_path, 'optimizers', "optimizer.rank-%d.opt" % 0))
 
-            # del states['state']
-            # optimizer_state = optimizer.state_dict()
-            # optimizer_state.update(states)
+            del states['state']
+            optimizer_state = optimizer.state_dict()
+            optimizer_state.update(states)
             optimizer.load_state_dict(optimizer_state)
 
             for name, param in optimizer.state_dict().items():
@@ -110,7 +110,7 @@ def lower_learning_rate(args, lr_scheduler, scale_factor):
 
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = current_lr*scale_factor,
-                                                betas = (0.9, 0.98),
+                                                betas = (0.9, 0.95),
                                                 weight_decay=args.weight_decay)
 
     if args.lr_decay_iters is None:
@@ -120,13 +120,13 @@ def lower_learning_rate(args, lr_scheduler, scale_factor):
                                          start_lr = current_lr*scale_factor,
                                          warmup_iter = 1000, 
                                          end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step)
+                                         num_iter = 0)
     else:
         lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
                                          start_lr = current_lr*scale_factor,
                                          warmup_iter = 1000, 
                                          end_iter = args.lr_decay_iters,
-                                         num_iter = args.start_step) 
+                                         num_iter = 0) 
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
