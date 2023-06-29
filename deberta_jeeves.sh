@@ -1,6 +1,7 @@
 #! /bin/bash
 
 pip install model_center==0.1.3
+ls /mnt/data/user/tc_agi/user/wangxing
 
 # if [[ ${IDC} == luca-dev-pek02 ]]; then
 #     MASTER_ADDR=localhost
