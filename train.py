@@ -149,7 +149,7 @@ def setup_model_and_optimizer(args):
     return model, optimizer, lr_scheduler, optim_manager
 
 def get_train_dataset(args):
-    bmp.print_rank(bmp.rank(), bmp.world_size())
+    bmp.print_rank(f"load dataset from path {args.input_dataset}")
     input_ids_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'input_ids', bmp.rank(), bmp.world_size())
     lm_pos_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'lm_pos', bmp.rank(), bmp.world_size())
     masked_labels_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'masked_labels', bmp.rank(), bmp.world_size())
@@ -425,6 +425,9 @@ def main():
     if args.report_to == "wandb":
         import wandb
         init_wandb(args)
+
+    platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
+    args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"]
 
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)

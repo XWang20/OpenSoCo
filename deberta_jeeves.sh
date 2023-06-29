@@ -11,7 +11,7 @@ rm -rf /data/tensorboard/*
 rm -rf /data/results/*
 rm -rf /data/checkpoints/*
 rm -rf /data/models/*
-du -h -max-depth=1 /data
+du -h --max-depth=1 /data
 ls -l -ch /data
 
 GPUS_PER_NODE=8
@@ -58,7 +58,7 @@ OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 1e-4"
-OPTS+=" --save-iters 500"
+OPTS+=" --save-iters 2500"
 OPTS+=" --log-iters 10"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
@@ -71,7 +71,7 @@ echo ${CMD}
 mkdir -p ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}
 
 if [[ $NODE_RANK == 0 ]]&&[[ $DLS_TASK_NUMBER == 1 ]]; then
-    ${CMD} 2>&1 | tee ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed/logs_$(date +"%Y_%m_%d_%H_%M_%S").log
+    ${CMD} 2>&1 | tee ${SAVE_PATH}/logs/train/$(date +"%Y_%m_%d_%H_%M_%S").log
 else
     ${CMD}
 fi
