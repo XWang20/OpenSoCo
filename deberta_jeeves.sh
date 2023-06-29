@@ -8,34 +8,20 @@ ls /mnt/data/user/tc_agi/user/wangxing
 
 GPUS_PER_NODE=8
 
-if [[ ${NODE_NAME} =~ master ]]; then
+if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
                     --node_rank=${RANK} \
-                    --master_addr=${MASTER_ADDR} \
+                    --master_addr=${MASTER_ENDPOINT} \
                     --master_port=${MASTER_PORT}"
 else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
+                    --node_rank=${RANK} \
                     --rdzv_id=1 \
                     --rdzv_backend=c10d \
                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
 fi
-
-# if [ ${IDC} == klara-2-pek02 ]; then
-#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
-#                     --nproc_per_node=${GPUS_PER_NODE} \
-#                     --node_rank=${RANK} \
-#                     --master_addr=${MASTER_ENDPOINT} \
-#                     --master_port=${MASTER_PORT}"
-#     else
-#     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
-#                     --nproc_per_node=${GPUS_PER_NODE} \
-#                     --rdzv_id=1 \
-#                     --rdzv_backend=c10d \
-#                     --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
-# fi
-
 
 BASE_PATH="."
 DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
@@ -62,7 +48,7 @@ OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size 128"
+OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 1e-4"
 OPTS+=" --save-iters 1000"
 OPTS+=" --log-iters 10"
