@@ -53,7 +53,7 @@ def get_model(args):
 def get_optimizer(args, model):
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = args.lr,
-                                                betas = (0.9, 0.98),
+                                                betas = (0.9, 0.95),
                                                 weight_decay=args.weight_decay)
 
     os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
@@ -110,7 +110,7 @@ def lower_learning_rate(args, lr_scheduler, scale_factor):
 
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = current_lr*scale_factor,
-                                                betas = (0.9, 0.95),
+                                                betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
 
     if args.lr_decay_iters is None:
@@ -118,13 +118,13 @@ def lower_learning_rate(args, lr_scheduler, scale_factor):
     if args.lr_decay_style == 'linear':
         lr_scheduler = bmp.lr_scheduler.Linear(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 1000, 
+                                         warmup_iter = 100, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0)
     else:
         lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 1000, 
+                                         warmup_iter = 100, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0) 
     return optimizer, lr_scheduler
@@ -249,7 +249,7 @@ def scale_down_model(scale, model, args):
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # optimizer, lr_scheduler = lower_learning_rate(args, lr_scheduler, scale_factor=0.8)
+    optimizer, lr_scheduler = lower_learning_rate(args, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
