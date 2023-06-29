@@ -3,17 +3,29 @@
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-if [[ ${NODE_NAME} =~ master ]]; then
-    MASTER_ADDR=localhost
-    MASTER_PORT="${MASTER_PORT}"
-    NNODES="${WORLD_SIZE}"
-    NODE_RANK=0
-else
-    MASTER_HOST="${HOSTNAME}"
-    MASTER_ADDR="${MASTER_ADDR}"
-    MASTER_PORT="${MASTER_PORT}"
-    NNODES="${WORLD_SIZE}"
-    NODE_RANK="${RANK}"
+# if [[ ${NODE_NAME} =~ master ]]; then
+#     MASTER_ADDR=localhost
+#     MASTER_PORT="${MASTER_PORT}"
+#     NNODES="${WORLD_SIZE}"
+#     NODE_RANK=0
+# else
+#     MASTER_ADDR="${MASTER_ADDR}"
+#     MASTER_PORT="${MASTER_PORT}"
+#     NNODES="${WORLD_SIZE}"
+#     NODE_RANK="${RANK}"
+# fi
+if [ ${IDC} == klara-2-pek02 ]; then
+    DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
+                    --nproc_per_node=${GPUS_PER_NODE} \
+                    --node_rank=${RANK} \
+                    --master_addr=${MASTER_ENDPOINT} \
+                    --master_port=${MASTER_PORT}"
+    else
+    DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
+                    --nproc_per_node=${GPUS_PER_NODE} \
+                    --rdzv_id=1 \
+                    --rdzv_backend=c10d \
+                    --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
 fi
 
 # MASTER_ADDR=localhost
