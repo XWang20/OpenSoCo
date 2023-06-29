@@ -52,7 +52,7 @@ def get_model(args):
 
 def get_optimizer(args, model):
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
-                                                lr = 5e-4,
+                                                lr = args.lr,
                                                 betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
 
@@ -74,12 +74,12 @@ def get_optimizer(args, model):
             
 
             # if dont use the momentum, delete the "state" in the optimizer state_dict
-            states = torch.load(
+            optimizer_state = torch.load(
                 os.path.join(args.load_path, 'optimizers', "optimizer.rank-%d.opt" % 0))
 
-            del states['state']
-            optimizer_state = optimizer.state_dict()
-            optimizer_state.update(states)
+            # del states['state']
+            # optimizer_state = optimizer.state_dict()
+            # optimizer_state.update(states)
             optimizer.load_state_dict(optimizer_state)
 
             for name, param in optimizer.state_dict().items():
@@ -103,6 +103,31 @@ def get_learning_rate_scheduler(args, optimizer):
                                          end_iter = args.lr_decay_iters,
                                          num_iter = args.start_step) 
     return lr_scheduler
+
+def lower_learning_rate(args, lr_scheduler, scale_factor):
+
+    current_lr = lr_scheduler.current_lr
+
+    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
+                                                lr = current_lr*scale_factor,
+                                                betas = (0.9, 0.98),
+                                                weight_decay=args.weight_decay)
+
+    if args.lr_decay_iters is None:
+        args.lr_decay_iters = args.train_iters * args.epochs
+    if args.lr_decay_style == 'linear':
+        lr_scheduler = bmp.lr_scheduler.Linear(optimizer, 
+                                         start_lr = current_lr*scale_factor,
+                                         warmup_iter = 1000, 
+                                         end_iter = args.lr_decay_iters,
+                                         num_iter = args.start_step)
+    else:
+        lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
+                                         start_lr = current_lr*scale_factor,
+                                         warmup_iter = 1000, 
+                                         end_iter = args.lr_decay_iters,
+                                         num_iter = args.start_step) 
+    return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
     optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale)
@@ -223,6 +248,8 @@ def scale_down_model(scale, model, args):
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+
+    # optimizer, lr_scheduler = lower_learning_rate(args, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
@@ -391,7 +418,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 337500
+    args.start_step = 348500
     bmp.print_rank(args)
 
     # init wandb and tensorboard
