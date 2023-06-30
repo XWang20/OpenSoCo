@@ -57,35 +57,30 @@ def get_optimizer(args, model):
                                                 betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
 
-    # os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
-    os.makedirs(os.path.join(args.save, 'checkpoints', 'optimizers'), exist_ok=True)
-
-    if args.load is not None:
+    if args.save is not None:
         bmp.print_rank("Loading the optimizer...")
         
-        if os.path.exists(os.path.join(args.save, 'checkpoints', 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0))):
-            
-            # # if use the momentum, load optimizer
-            # states = torch.load(
-            #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, bmp.rank())))
-            
-            # # if use the momentum, load the "state" in the optimizer state_dict
-            # optimizer.load_state_dict(states)
-            
-            # if dont use the momentum, delete the "state" in the optimizer state_dict
-            # states = torch.load(
-            #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
+        # # if use the momentum, load optimizer
+        # states = torch.load(
+        #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, bmp.rank())))
+        
+        # # if use the momentum, load the "state" in the optimizer state_dict
+        # optimizer.load_state_dict(states)
+        
+        # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # states = torch.load(
+        #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
 
-            states = torch.load(
-                os.path.join(args.load, 'optimizers', "optimizer.rank-%d.opt" % (0)))
+        states = torch.load(
+            os.path.join(args.load, 'optimizers', "optimizer.rank-%d.opt" % (0)))
 
-            del states['state']
-            optimizer_state = optimizer.state_dict()
-            optimizer_state.update(states)
-            optimizer.load_state_dict(optimizer_state)
+        del states['state']
+        optimizer_state = optimizer.state_dict()
+        optimizer_state.update(states)
+        optimizer.load_state_dict(optimizer_state)
 
-            for name, param in optimizer.state_dict().items():
-                bmp.print_rank(name, param)
+        for name, param in optimizer.state_dict().items():
+            bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -419,7 +414,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 350000
+    args.start_step = 348500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
