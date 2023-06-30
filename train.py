@@ -150,14 +150,17 @@ def setup_model_and_optimizer(args):
 
 def get_train_dataset(args):
     bmp.print_rank(f"load dataset from path {args.input_dataset}")
+    wait_time=60*n
+    time.sleep(wait_time)
     print(bmp.rank(), bmp.world_size())
+    
     input_ids_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'input_ids', bmp.rank(), bmp.world_size())
     lm_pos_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'lm_pos', bmp.rank(), bmp.world_size())
     masked_labels_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'masked_labels', bmp.rank(), bmp.world_size())
     length_list_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'length_list', bmp.rank(), bmp.world_size())
-    print(bmp.rank(), "train DistributedMMapIndexedDataset")
+    print(bmp.rank(), "finish load train DistributedMMapIndexedDataset")
     bert_dataset = BertDataset(input_ids_dataset, lm_pos_dataset, masked_labels_dataset, length_list_dataset)
-    print(bmp.rank(), "train bert_dataset")
+    print(bmp.rank(), "finish load train bert_dataset")
 
     return bert_dataset
 
@@ -166,9 +169,9 @@ def get_valid_dataset(dataset_path):
     lm_pos_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','lm_pos'))
     masked_labels_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','masked_labels'))
     length_list_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','length_list'))
-    print(bmp.rank(), "val DistributedMMapIndexedDataset")
+    print(bmp.rank(), "finish load val DistributedMMapIndexedDataset")
     bert_dataset = BertDataset(input_ids_dataset, lm_pos_dataset, masked_labels_dataset, length_list_dataset)
-    print(bmp.rank(), "val bert_dataset")
+    print(bmp.rank(), "finish load val bert_dataset")
 
     return bert_dataset
 
@@ -431,9 +434,9 @@ def main():
         import wandb
         init_wandb(args)
 
-    # import json
-    # platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
-    # args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
+    import json
+    platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
+    args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
 
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
