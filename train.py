@@ -172,6 +172,7 @@ def get_valid_dataset(dataset_path):
     return bert_dataset
 
 def valid(args, model, dev_dataloader, loss_func, step, writer):
+    bmp.print_rank("start valid! ")
     model.eval()
     valid_loss = 0
     with torch.no_grad():
@@ -231,10 +232,8 @@ def batch_iter(args, dataset):
 
 def scale_down_model(scale, model, args):
     bmp.print_rank(f"Nan loss inspected. Now scaling down the model with factor 10.0...\nBefore Scaling:")
-    # print_inspect(model, "*")
     new_dict = scale_roberta_model(scale, model, config_file = args.model_config)
-    # bmp.print_rank(f"After Scaling:")
-    # print_inspect(model, "*") 
+
     model.load_state_dict(new_dict)
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
@@ -400,9 +399,6 @@ def initialize():
     if args.save != None:
         os.makedirs(args.save, exist_ok=True)
 
-        # if args.hdfs_save != None:
-        #     os.system(f"hdfs dfs -mkdir {args.hdfs_save}")
-
     return args
 
 def main():
@@ -438,6 +434,10 @@ def main():
     train_dataset = get_train_dataset(args)
     valid_dataset = get_valid_dataset(args.test_dataset)
     dev_dataloader = DistributedDataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
+    
+    bmp.print_rank("finish loading dataset.")
+    bmp.synchronize()
+
     pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader)
 
 if __name__ == '__main__':
