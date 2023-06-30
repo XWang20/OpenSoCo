@@ -150,7 +150,7 @@ def setup_model_and_optimizer(args):
 
 def get_train_dataset(args):
     bmp.print_rank(f"load dataset from path {args.input_dataset}")
-    wait_time=60*n
+    wait_time=60*bmp.rank()
     time.sleep(wait_time)
     print(bmp.rank(), bmp.world_size())
     
