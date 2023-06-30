@@ -150,11 +150,14 @@ def setup_model_and_optimizer(args):
 
 def get_train_dataset(args):
     bmp.print_rank(f"load dataset from path {args.input_dataset}")
+    print(bmp.rank(), bmp.world_size())
     input_ids_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'input_ids', bmp.rank(), bmp.world_size())
     lm_pos_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'lm_pos', bmp.rank(), bmp.world_size())
     masked_labels_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'masked_labels', bmp.rank(), bmp.world_size())
     length_list_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'length_list', bmp.rank(), bmp.world_size())
+    print("train DistributedMMapIndexedDataset")
     bert_dataset = BertDataset(input_ids_dataset, lm_pos_dataset, masked_labels_dataset, length_list_dataset)
+    print("train bert_dataset")
 
     return bert_dataset
 
@@ -163,7 +166,9 @@ def get_valid_dataset(dataset_path):
     lm_pos_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','lm_pos'))
     masked_labels_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','masked_labels'))
     length_list_dataset = MMapIndexedDataset(os.path.join(dataset_path, 'valid','length_list'))
+    print("val DistributedMMapIndexedDataset")
     bert_dataset = BertDataset(input_ids_dataset, lm_pos_dataset, masked_labels_dataset, length_list_dataset)
+    print("val bert_dataset")
 
     return bert_dataset
 
