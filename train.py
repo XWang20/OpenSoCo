@@ -359,7 +359,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
             # save checkpoint
             model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
-            bmp.save(model, os.path.join(args.save, model_path))
+            bmp.save(model.state_dict(), os.path.join(args.save, model_path))
 
             # save optimizer
             optimizer_path = os.path.join("optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
@@ -419,14 +419,14 @@ def main():
     import json
     platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
 
-    if bmp.rank() % 2 == 0:
+    if bmp.rank() % 4 == 0:
         args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
-    elif bmp.rank() % 2 == 1:
+    elif bmp.rank() % 4 == 1:
         args.input_dataset = os.path.join(args.input_dataset)
-    # elif bmp.rank() % 4 == 2:
-    #     args.input_dataset = os.path.join(args.input_dataset, 2)
-    # elif bmp.rank() % 4 == 3:
-    #     args.input_dataset = os.path.join(args.input_dataset, 3)
+    elif bmp.rank() % 4 == 2:
+        args.input_dataset = os.path.join(args.input_dataset, 1)
+    elif bmp.rank() % 4 == 3:
+        args.input_dataset = os.path.join(args.input_dataset, 2)
     
     bmp.print_rank(args)
 
@@ -434,7 +434,7 @@ def main():
     train_dataset = get_train_dataset(args)
     valid_dataset = get_valid_dataset(args.test_dataset)
     dev_dataloader = DistributedDataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)
-    
+
     bmp.print_rank("finish loading dataset.")
     bmp.synchronize()
 
