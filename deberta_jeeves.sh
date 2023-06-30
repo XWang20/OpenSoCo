@@ -6,7 +6,7 @@ export HADOOP_USER_PASSWORD=IH2U3AS1D
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-du -h --max-depth=1 /data
+du -h /data
 ls -l -ch /data
 
 GPUS_PER_NODE=8

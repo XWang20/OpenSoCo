@@ -41,8 +41,8 @@ def get_model(args):
         bmp.load(model, args.load)
     else:
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
-        ckpt_path = os.path.join("checkpoints", f"checkpoint-{args.start_step}.pt")
-        bmp.load(model, os.path.join(args.load_path, "checkpoints", f"checkpoint-{args.start_step}.pt"))
+        ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
+        bmp.load(model, ckpt_path)
 
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
@@ -53,7 +53,7 @@ def get_model(args):
 def get_optimizer(args, model):
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = args.lr,
-                                                betas = (0.9, 0.95),
+                                                betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
 
     # os.system(f"hdfs dfs -mkdir {os.path.join(args.hdfs_save, 'optimizers')}")
@@ -61,21 +61,19 @@ def get_optimizer(args, model):
 
     if args.load is not None:
         bmp.print_rank("Loading the optimizer...")
-        optim_path = os.path.join('optimizers', "optimizer.rank-%d.opt" % 0)
         
-        if os.path.exists(os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % 0)):
+        if os.path.exists(os.path.join(args.save, 'checkpoints', 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0))):
             
             # # if use the momentum, load optimizer
             # states = torch.load(
-            #     os.path.join(args.save, 'optimizers', "optimizer.rank-%d.opt" % (bmp.rank())))
+            #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, bmp.rank())))
             
             # # if use the momentum, load the "state" in the optimizer state_dict
             # optimizer.load_state_dict(states)
             
-
             # if dont use the momentum, delete the "state" in the optimizer state_dict
             states = torch.load(
-                os.path.join(args.load_path, 'optimizers', "optimizer.rank-%d.opt" % 0))
+                os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
 
             del states['state']
             optimizer_state = optimizer.state_dict()
@@ -368,16 +366,16 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
                 bmp.save(model, os.path.join(args.save, model_path))
 
-                if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
-                    os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
+                # if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
+                #     os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
 
             # save optimizer
             optimizer_path = os.path.join("optimizers", "optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
 
             torch.save(optimizer.state_dict(), os.path.join(args.save, "checkpoints", optimizer_path))
 
-            if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
-                os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, optimizer_path)}")
+            # if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
+            #     os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, "checkpoints", optimizer_path)}")
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
         
@@ -426,8 +424,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 348500
-    bmp.print_rank(args)
+    args.start_step = 350000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
@@ -436,7 +433,17 @@ def main():
 
     import json
     platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
-    args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
+
+    if bmp.rank() % 2 == 0:
+        args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
+    elif bmp.rank() % 2 == 1:
+        args.input_dataset = os.path.join(args.input_dataset)
+    # elif bmp.rank() % 4 == 2:
+    #     args.input_dataset = os.path.join(args.input_dataset, 2)
+    # elif bmp.rank() % 4 == 3:
+    #     args.input_dataset = os.path.join(args.input_dataset, 3)
+    
+    bmp.print_rank(args)
 
     model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
