@@ -9,7 +9,6 @@ from arguments import get_args
 from scale_model import scale_roberta_model
 from tokenizer import get_tokenizer
 import os
-import export
 
 def get_file_path(root_dir):
     p = []
