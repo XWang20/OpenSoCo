@@ -71,7 +71,7 @@ def get_optimizer(args, model):
         #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
 
         states = torch.load(
-            os.path.join(args.load, 'optimizers', "optimizer.rank-%d.opt" % (0)))
+            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % (0)))
 
         del states['state']
         optimizer_state = optimizer.state_dict()
