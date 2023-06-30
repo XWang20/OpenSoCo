@@ -9,6 +9,7 @@ from arguments import get_args
 from scale_model import scale_roberta_model
 from tokenizer import get_tokenizer
 import os
+import export
 
 def get_file_path(root_dir):
     p = []
@@ -72,8 +73,11 @@ def get_optimizer(args, model):
             # optimizer.load_state_dict(states)
             
             # if dont use the momentum, delete the "state" in the optimizer state_dict
+            # states = torch.load(
+            #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
+
             states = torch.load(
-                os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
+                os.path.join(args.load, 'optimizers', "optimizer.rank-%d.opt" % (0)))
 
             del states['state']
             optimizer_state = optimizer.state_dict()
@@ -231,7 +235,6 @@ def batch_iter(args, dataset):
             attention_mask_list = []
             labels_list = []
 
-
 def scale_down_model(scale, model, args):
     bmp.print_rank(f"Nan loss inspected. Now scaling down the model with factor 10.0...\nBefore Scaling:")
     # print_inspect(model, "*")
@@ -361,21 +364,13 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
-            if bmp.rank() == 0:
-                # save checkpoint
-                model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
-                bmp.save(model, os.path.join(args.save, model_path))
-
-                # if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
-                #     os.system(f"hdfs dfs -put {os.path.join(args.save, model_path)} {os.path.join(args.hdfs_save, model_path)}")
+            # save checkpoint
+            model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
+            bmp.save(model, os.path.join(args.save, model_path))
 
             # save optimizer
-            optimizer_path = os.path.join("optimizers", "optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
-
-            torch.save(optimizer.state_dict(), os.path.join(args.save, "checkpoints", optimizer_path))
-
-            # if (step + start_step + 1) % 10000 == 0 and args.hdfs_save:
-            #     os.system(f"hdfs dfs -put {os.path.join(args.save, optimizer_path)} {os.path.join(args.hdfs_save, "checkpoints", optimizer_path)}")
+            optimizer_path = os.path.join("optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
+            bmp.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
         
