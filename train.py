@@ -424,9 +424,9 @@ def main():
     elif bmp.rank() % 4 == 1:
         args.input_dataset = os.path.join(args.input_dataset)
     elif bmp.rank() % 4 == 2:
-        args.input_dataset = os.path.join(args.input_dataset, 1)
+        args.input_dataset = os.path.join(args.input_dataset, "1")
     elif bmp.rank() % 4 == 3:
-        args.input_dataset = os.path.join(args.input_dataset, 2)
+        args.input_dataset = os.path.join(args.input_dataset, "2")
     
     bmp.print_rank(args)
 
