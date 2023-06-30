@@ -419,14 +419,14 @@ def main():
     import json
     platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
 
-    if bmp.rank() % 4 == 0:
+    if bmp.rank() % 2 == 0:
         args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
-    elif bmp.rank() % 4 == 1:
+    elif bmp.rank() % 2 == 1:
         args.input_dataset = os.path.join(args.input_dataset)
-    elif bmp.rank() % 4 == 2:
-        args.input_dataset = os.path.join(args.input_dataset, "1")
-    elif bmp.rank() % 4 == 3:
-        args.input_dataset = os.path.join(args.input_dataset, "2")
+    # elif bmp.rank() % 4 == 2:
+    #     args.input_dataset = os.path.join(args.input_dataset, "1")
+    # elif bmp.rank() % 4 == 3:
+    #     args.input_dataset = os.path.join(args.input_dataset, "2")
     
     bmp.print_rank(args)
 
