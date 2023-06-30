@@ -3,9 +3,7 @@
 export HADOOP_USER_NAME=tc_agi
 export HADOOP_USER_PASSWORD=IH2U3AS1D
 
-cp /mnt/data/user/tc_agi/user/wangxing/save/deberta_prenorm_OpenSoCo_en/1e-4-init-embed/checkpoints/checkpoint-348500.pt /data/checkpoints
-
-rm -rf /data/checkpoints/optimizers
+cp /mnt/data/user/tc_agi/user/wangxing/save/deberta_prenorm_OpenSoCo_en/1e-4-init-embed/optimizers/optimizer.rank-0.opt /data/checkpoints
 
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
