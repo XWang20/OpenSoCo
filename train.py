@@ -5,6 +5,7 @@ from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDatas
 from model_center.utils import print_inspect
 from dataset import BertDataset
 import time
+import datetime 
 from arguments import get_args
 from scale_model import scale_roberta_model
 from tokenizer import get_tokenizer
@@ -256,12 +257,20 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     start_step = args.start_step
     skip_step = 0
     log_loss = 0
-
     if args.report_to == "tensorboard":
         from torch.utils.tensorboard import SummaryWriter
+        
+        bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
+
         # report training log to or tensorboard
         if bmp.rank() == 0:
-            writer = SummaryWriter(os.path.join(args.save, 'tensorboard'))
+            # 获取当前时间并格式化为字符串  
+            now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+
+            # 创建目录  
+            tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
+            os.makedirs(tensorboard_dir)
+            writer = SummaryWriter(tensorboard_dir)
         else:
             writer = None
 
@@ -285,10 +294,10 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         if (start_step + step + 1) % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
             if torch.isnan(grad_norm):
-                # if nan loss inspected, skip the current step
+                # if nan grad norm inspected, skip the current step
                 skip_step += 1
                 optim_manager.zero_grad()
-                bmp.print_rank(f"Nan loss inspected. Skip the current step. Total skip step: {skip_step}")
+                bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
                 if args.report_to == "wandb" and bmp.rank() == 0:
                     tokenizer = get_tokenizer()
                     wandb.alert(
@@ -301,6 +310,10 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                                 labels: {data['attention_mask']}\n''',
                         level=wandb.AlertLevel.WARN
                     )
+            elif skip_step < 6 and torch.isnan(grad_norm) > 1.0:
+                skip_step += 1
+                optim_manager.zero_grad()
+                bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
             else:
                 try:
                     optim_manager.step()
@@ -362,7 +375,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             bmp.save(model, os.path.join(args.save, model_path))
 
             # save optimizer
-            optimizer_path = os.path.join("optimizer.rank-%d.opt" % (bmp.rank()))
+            optimizer_path = os.path.join("checkpoints", "optimizer.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
@@ -409,24 +422,12 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 348500
+    args.start_step = 377500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
         import wandb
         init_wandb(args)
-
-    import json
-    platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
-
-    if bmp.rank() % 2 == 0:
-        args.input_dataset = json.load(open(platform_config_path, "r", encoding="utf-8"))["dataset_map"]["wx_pretrain"] + "/"
-    elif bmp.rank() % 2 == 1:
-        args.input_dataset = os.path.join(args.input_dataset)
-    # elif bmp.rank() % 4 == 2:
-    #     args.input_dataset = os.path.join(args.input_dataset, "1")
-    # elif bmp.rank() % 4 == 3:
-    #     args.input_dataset = os.path.join(args.input_dataset, "2")
     
     bmp.print_rank(args)
 

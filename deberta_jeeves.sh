@@ -53,8 +53,8 @@ OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 1e-4"
-OPTS+=" --save-iters 2500"
-OPTS+=" --log-iters 10"
+OPTS+=" --save-iters 5000"
+OPTS+=" --log-iters 100"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
@@ -63,7 +63,7 @@ OPTS+=" --report_to tensorboard"
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train.py ${OPTS}"
 echo ${CMD}
 
-mkdir -p ${SAVE_PATH}/${CONFIG}_${DATASET_NAME}
+mkdir -p ${SAVE_PATH}/logs/train/
 
 if [[ $NODE_RANK == 0 ]]&&[[ $DLS_TASK_NUMBER == 1 ]]; then
     ${CMD} 2>&1 | tee ${SAVE_PATH}/logs/train/$(date +"%Y_%m_%d_%H_%M_%S").log
