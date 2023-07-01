@@ -27,7 +27,8 @@ else
 fi
 
 BASE_PATH="."
-DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
+# DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
+DATA_PATH="/data/"
 SAVE_PATH="/data/"
 HDFS_PATH="/user/tc_agi/user/wangxing/save"
 DATASET_NAME="OpenSoCo_en"
