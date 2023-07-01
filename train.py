@@ -260,7 +260,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     if args.report_to == "tensorboard":
         from torch.utils.tensorboard import SummaryWriter
         
-        bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
+        bmp.print_rank("start init tensorboard")
 
         # report training log to or tensorboard
         if bmp.rank() == 0:
@@ -270,6 +270,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             # 创建目录  
             tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
             os.makedirs(tensorboard_dir)
+            bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
+
             writer = SummaryWriter(tensorboard_dir)
         else:
             writer = None
@@ -375,7 +377,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             bmp.save(model, os.path.join(args.save, model_path))
 
             # save optimizer
-            optimizer_path = os.path.join("checkpoints", "optimizer.rank-%d.opt" % (bmp.rank()))
+            optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
