@@ -362,7 +362,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             bmp.save(model, os.path.join(args.save, model_path))
 
             # save optimizer
-            optimizer_path = os.path.join("optimizer-%d.rank-%d.opt" % ((step + start_step + 1), bmp.rank()))
+            optimizer_path = os.path.join("optimizer.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
