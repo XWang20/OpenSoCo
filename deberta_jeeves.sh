@@ -9,7 +9,7 @@ ls /mnt/data/user/tc_agi/user/wangxing
 du -h /data
 ls -l -ch /data
 
-GPUS_PER_NODE=1
+GPUS_PER_NODE=8
 
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
@@ -27,8 +27,7 @@ else
 fi
 
 BASE_PATH="."
-# DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
-DATA_PATH="/data/"
+DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
 SAVE_PATH="/data/"
 HDFS_PATH="/user/tc_agi/user/wangxing/save"
 DATASET_NAME="OpenSoCo_en"
@@ -54,7 +53,7 @@ OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 1e-4"
-OPTS+=" --save-iters 1"
+OPTS+=" --save-iters 2500"
 OPTS+=" --log-iters 10"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
