@@ -9,7 +9,7 @@ ls /mnt/data/user/tc_agi/user/wangxing
 du -h /data
 ls -l -ch /data
 
-GPUS_PER_NODE=8
+GPUS_PER_NODE=1
 
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
@@ -53,7 +53,7 @@ OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 1e-4"
-OPTS+=" --save-iters 2500"
+OPTS+=" --save-iters 1"
 OPTS+=" --log-iters 10"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
