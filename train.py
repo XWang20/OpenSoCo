@@ -320,7 +320,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             else:
                 try:
                     optim_manager.step()
-                    skip_step = 0
+                    skip_step -= 1
                 except:
                     # if step failed, stop training
                     if args.report_to == "wandb" and bmp.rank() == 0:
@@ -425,7 +425,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 390000
+    args.start_step = 387500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
