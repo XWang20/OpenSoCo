@@ -60,27 +60,28 @@ def get_optimizer(args, model):
     if args.save is not None:
         bmp.print_rank("Loading the optimizer...")
         
-        # # if use the momentum, load optimizer
-        # states = torch.load(
-        #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, bmp.rank())))
+        # if use the momentum, load optimizer
+        states = torch.load(
+            os.path.join(args.save, 'checkpoint', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # # if use the momentum, load the "state" in the optimizer state_dict
-        # optimizer.load_state_dict(states)
+        # if use the momentum, load the "state" in the optimizer state_dict
+        optimizer.load_state_dict(states)
         
         # if dont use the momentum, delete the "state" in the optimizer state_dict
         # states = torch.load(
         #     os.path.join(args.save, 'optimizers', "optimizer-%d.rank-%d.opt" % (args.start_step, 0)))
 
-        states = torch.load(
-            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % (0)))
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % (bmp.rank())))
 
-        del states['state']
-        optimizer_state = optimizer.state_dict()
-        optimizer_state.update(states)
-        optimizer.load_state_dict(optimizer_state)
+        # del states['state']
+        # optimizer_state = optimizer.state_dict()
+        # optimizer_state.update(states)
+        # optimizer.load_state_dict(optimizer_state)
 
         for name, param in optimizer.state_dict().items():
-            bmp.print_rank(name, param)
+            if name == "param_groups":
+                bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -344,8 +345,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
             # if skip step > 10 and still inspect nan loss, then scale down the model
-            if skip_step > 10 and torch.isnan(grad_norm):
-                if bmp.rank() == 0:
+            if torch.isnan(loss) or (skip_step > 10 and torch.isnan(grad_norm)):
+                if args.report_to == "wandb" and bmp.rank() == 0:
                     wandb.alert(
                         title="Nan loss inspected.",
                         text="inspected nan loss. scale model by factor 10.",
@@ -424,7 +425,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 377500
+    args.start_step = 390000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
