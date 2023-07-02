@@ -62,7 +62,7 @@ def get_optimizer(args, model):
         
         # if use the momentum, load optimizer
         states = torch.load(
-            os.path.join(args.save, 'checkpoint', "checkpoint.rank-%d.opt" % (bmp.rank())))
+            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
         # if use the momentum, load the "state" in the optimizer state_dict
         optimizer.load_state_dict(states)
