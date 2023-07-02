@@ -317,7 +317,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             else:
                 try:
                     optim_manager.step()
-                    skip_step -= 1
+                    skip_step = 0
                 except:
                     # if step failed, stop training
                     if args.report_to == "wandb" and bmp.rank() == 0:
