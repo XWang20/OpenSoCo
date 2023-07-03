@@ -342,7 +342,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
             # if skip step > 10 and still inspect nan loss, then scale down the model
-            if skip_step > 10 and torch.isnan(grad_norm):
+            if torch.isnan(grad_norm):
                 bmp.print_rank(f"Nan loss inspected. ")
                 model = scale_down_model(scale = 10.0, model = model, args = args)
 
