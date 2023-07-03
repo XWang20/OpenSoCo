@@ -69,7 +69,7 @@ def get_optimizer(args, model):
         
         # if dont use the momentum, delete the "state" in the optimizer state_dict
         states = torch.load(
-            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
 
         del states['state']
         optimizer_state = optimizer.state_dict()
@@ -422,7 +422,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 390000
+    args.start_step = 392500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
