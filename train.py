@@ -208,7 +208,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step - 357500) * args.batch_size
+    st = (args.start_step + 1000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -250,7 +250,7 @@ def scale_down_model(scale, model, args):
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
+    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
