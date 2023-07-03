@@ -298,8 +298,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 optim_manager.zero_grad()
                 bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
                 tokenizer = get_tokenizer()
-                print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
-                      labels: {data['labels']}''')
+                # print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
+                #       labels: {data['labels']}''')
 
                 if args.report_to == "wandb" and bmp.rank() == 0:
                     wandb.alert(
