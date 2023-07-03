@@ -1,8 +1,5 @@
 #! /bin/bash
 
-export HADOOP_USER_NAME=tc_agi
-export HADOOP_USER_PASSWORD=IH2U3AS1D
-
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
@@ -48,7 +45,7 @@ OPTS+=" --warmup-iters 10000"
 OPTS+=" --lr-decay-style cosine"
 OPTS+=" --lr-decay-iters 1000000"
 OPTS+=" --weight-decay 0.01"
-OPTS+=" --clip-grad 0.2"
+OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
 OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
