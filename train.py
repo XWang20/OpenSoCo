@@ -342,7 +342,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
             # if skip step > 10 and still inspect nan loss, then scale down the model
-            if torch.isnan(loss) or (skip_step > 10 and torch.isnan(grad_norm)):
+            if skip_step > 10 and torch.isnan(grad_norm):
                 bmp.print_rank(f"Nan loss inspected. ")
                 model = scale_down_model(scale = 10.0, model = model, args = args)
 
@@ -373,8 +373,13 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
             # save checkpoint
-            model_path = os.path.join('checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
+            model_path = os.path.join(args.save, 'checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
             bmp.save(model, os.path.join(args.save, model_path))
+                    # 但此处先写空文件
+            model_status = f'{model_path.split(".pt")[0]}.success'
+            bmp.print_rank(f"saving status into: {model_status}")
+            with open(model_status, "w") as fout:
+                pass
 
             # save optimizer
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
