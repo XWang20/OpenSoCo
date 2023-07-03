@@ -250,7 +250,7 @@ def scale_down_model(scale, model, args):
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
@@ -344,6 +344,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             # if skip step > 10 and still inspect nan loss, then scale down the model
             if torch.isnan(loss) or (skip_step > 10 and torch.isnan(grad_norm)):
                 bmp.print_rank(f"Nan loss inspected. ")
+                model = scale_down_model(scale = 10.0, model = model, args = args)
 
                 if args.report_to == "wandb" and bmp.rank() == 0:
                     wandb.alert(
@@ -351,7 +352,6 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                         text="inspected nan loss. scale model by factor 10.",
                         level=wandb.AlertLevel.WARN
                     )
-                model = scale_down_model(scale = 10.0, model = model, args = args)
 
         # log the training state to console
         if (start_step + step + 1) % args.log_iters == 0:
@@ -424,7 +424,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 390000
+    args.start_step = 392500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
