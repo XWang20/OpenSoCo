@@ -91,8 +91,8 @@ def get_learning_rate_scheduler(args, optimizer):
                                          warmup_iter = args.warmup_iters, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = args.start_step)
-    else:
-        lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
+    elif args.lr_decay_style == 'cosine':
+        lr_scheduler = bmp.lr_scheduler.Cosine(optimizer, 
                                          start_lr = args.lr,
                                          warmup_iter = args.warmup_iters, 
                                          end_iter = args.lr_decay_iters,
@@ -422,7 +422,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 392500
+    args.start_step = 393000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
