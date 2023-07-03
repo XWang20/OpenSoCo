@@ -273,8 +273,6 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             writer = SummaryWriter(tensorboard_dir)
         else:
             writer = None
-
-    model = scale_down_model(scale = 10.0, model = model, args = args)
     
     # evaluate model before training
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
@@ -426,7 +424,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 393000
+    args.start_step = 390000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
