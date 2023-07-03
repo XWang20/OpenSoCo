@@ -113,13 +113,13 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     if args.lr_decay_style == 'linear':
         lr_scheduler = bmp.lr_scheduler.Linear(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 100, 
+                                         warmup_iter = 1000, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0)
-    else:
-        lr_scheduler = bmp.lr_scheduler.Noam(optimizer, 
+    elif args.lr_decay_style == 'cosine':
+        lr_scheduler = bmp.lr_scheduler.Cosine(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 100, 
+                                         warmup_iter = 1000, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0) 
     return optimizer, lr_scheduler
@@ -230,7 +230,7 @@ def batch_iter(args, dataset):
             labels_list = []
 
 def scale_down_model(scale, model, args):
-    bmp.print_rank(f"Nan loss inspected. Now scaling down the model with factor 10.0...\nBefore Scaling:")
+    bmp.print_rank(f"Now scaling down the model with factor 10.0...")
     new_dict = scale_roberta_model(scale, model, config_file = args.model_config)
 
     model.load_state_dict(new_dict)
@@ -250,7 +250,7 @@ def scale_down_model(scale, model, args):
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
-    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
 
     start_step = args.start_step
     skip_step = 0
@@ -343,6 +343,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
             # if skip step > 10 and still inspect nan loss, then scale down the model
             if torch.isnan(loss) or (skip_step > 10 and torch.isnan(grad_norm)):
+                bmp.print_rank(f"Nan loss inspected. ")
+
                 if args.report_to == "wandb" and bmp.rank() == 0:
                     wandb.alert(
                         title="Nan loss inspected.",
