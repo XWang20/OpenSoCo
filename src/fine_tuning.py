@@ -409,10 +409,11 @@ result = evaluate(model, test_dataloader)
 
 if bmt.rank() == 0:
     logger.info(f"test result: {result}")
-    f = open(TEST_RESULT_PATH, "a")
-    f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
-    f.close()
 
-    if args.delete_checkpoint:
-        for path in [BEST_MODEL_PATH]:
-            os.remove(path)
+f = open(TEST_RESULT_PATH, "a")
+f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
+f.close()
+
+if args.delete_checkpoint:
+    for path in [BEST_MODEL_PATH]:
+        os.remove(path)
