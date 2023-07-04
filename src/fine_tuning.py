@@ -90,7 +90,7 @@ warm_up_ratio = 0.01
 output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=True)
 
-BEST_MODEL_PATH = os.path.join(output_dir, 'model.pt')
+BEST_MODEL_PATH = os.path.join(output_dir.replace("results", "checkpoints"), 'checkpoint.pt')
 TEST_RESULT_PATH = os.path.join(output_dir, 'test_results.json')
 VALIDATION_RESULT_PATH = os.path.join(output_dir, 'validation_result.json')
 
