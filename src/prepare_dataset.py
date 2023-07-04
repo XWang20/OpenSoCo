@@ -40,7 +40,7 @@ def get_multi_label_dataset(file_path, do_preprocess, train_sample_num=1):
     assert(len(contents)==len(labels))
     return contents, labels
 
-def get_single_label_dataset(file_path, do_preprocess, seed, train_sample_num=1):
+def get_single_label_dataset(file_path, do_preprocess, train_sample_num=1):
     labels = []
     contents = []
     df = pd.read_csv(file_path,lineterminator='\n')
