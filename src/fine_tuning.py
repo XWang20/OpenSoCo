@@ -156,6 +156,8 @@ def get_model(args, model_path, label_num):
         model_path = os.path.join(json.load(open(platform_config_path, "r", encoding="utf-8"))["model_map"]["wx_lm"], args.model_name)
         bmt.print_rank("loading from model_path: {}".format(model_path))
         model = RobertaModel(config, model_path=model_path, label_num=label_num)
+        bmt.print_rank("finish loading model.")
+        bmt.synchronize()
 
     model = bmt.BMTrainModelWrapper(model)
     
@@ -259,11 +261,16 @@ model = get_model(args, args.model_path, label_num)
 if args.do_train:
 
     optimizer = bmt.optim.AdamOptimizer(model.parameters(),lr = args.learning_rate, weight_decay=1e-2, betas = (0.9, 0.999))
+    bmt.synchronize()
 
     lr_scheduler = bmt.lr_scheduler.Linear(optimizer, 
                                             start_lr = args.learning_rate,
                                             warmup_iter = warm_up_ratio*total_step,
                                             end_iter = total_step)
+    bmt.synchronize()
+    # get the memory usage
+    bmt.print_rank("Model mem\n", torch.cuda.memory_summary())
+
     loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
 
 def compute_metrics(y_labels, y_preds):
