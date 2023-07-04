@@ -8,9 +8,8 @@ GPUS_PER_NODE=8
 DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                 --nproc_per_node=${GPUS_PER_NODE} \
                 --node_rank=${RANK} \
-                --rdzv_id=1 \
-                --rdzv_backend=c10d \
-                --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
+                --master_addr=${MASTER_ENDPOINT} \
+                --master_port=${MASTER_PORT}"
 
 base_path=./
 data_process_method='single_label'
