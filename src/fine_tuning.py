@@ -62,9 +62,9 @@ else:
 log_iter = 10
 epochs = args.epoch
 if args.adapter:
-    batch_size = 64
+    batch_size = 8
 else:
-    batch_size = 32
+    batch_size = 4
 warm_up_ratio = 0.01
 
 output_dir = args.output_dir
@@ -90,8 +90,10 @@ stream_handler.setFormatter(formatter)
 logger.addHandler(file_handler)
 logger.addHandler(stream_handler)
 
-logger.info(str(args))
-logger.info("Prepare dataset...")
+if bmt.rank() == 0:
+    logger.info(str(args))
+    logger.info("Prepare dataset...")
+
 logger.info(f"local rank:{bmt.rank()}, world size:{bmt.world_size()}")
 
 dataset_process = {
@@ -121,19 +123,23 @@ if args.train_sample_num !=1 and len(train_texts) < args.train_sample_num:
     os.remove(output_dir)
     exit()
 
-logger.info(f"train, val and test size is {len(train_labels)}, {len(val_labels)}, {len(test_labels)}")
+if bmt.rank() == 0:
+    logger.info(f"train, val and test size is {len(train_labels)}, {len(val_labels)}, {len(test_labels)}")
 
 if isinstance(test_labels[0], list):
     args.problem_type = "multi_label_classification"
     label_num = len(test_labels[0])
-    logger.info(f"train, val and test label is {len(train_labels[0])}, {len(val_labels[0])}, {len(test_labels[0])}")
+    if bmt.rank() == 0:
+        logger.info(f"train, val and test label is {len(train_labels[0])}, {len(val_labels[0])}, {len(test_labels[0])}")
 else:
     args.problem_type = "single_label_classification"
     label_num = len(set(test_labels))
     assert set(train_labels) == set(val_labels) == set(test_labels)
-    logger.info(f"train, val and test label is {set(train_labels)}, {set(val_labels)}, {set(test_labels)}")
+    if bmt.rank() == 0:
+        logger.info(f"train, val and test label is {set(train_labels)}, {set(val_labels)}, {set(test_labels)}")
 
-logger.info(f"{train_texts[0]}, {train_labels[0]}")
+if bmt.rank() == 0:
+    logger.info(f"{train_texts[0]}, {train_labels[0]}")
 
 def get_model(args, model_path, label_num):
     if args.model_name == "deberta-xxlarge":
@@ -195,7 +201,8 @@ def get_tokenizer(args, model_path):
     return tokenizer
 
 tokenizer = get_tokenizer(args, args.model_path)
-logger.info(tokenizer)
+if bmt.rank() == 0:
+    logger.info(tokenizer)
 
 tokens_train = tokenizer.batch_encode_plus(
     train_texts,
@@ -232,7 +239,7 @@ test_data = TensorDataset(torch.tensor(tokens_test['input_ids']), \
     torch.tensor(tokens_test['attention_mask']), \
     torch.tensor(test_labels))
 
-if bmt.rank == 0:
+if bmt.rank() == 0:
     logger.info(train_data[0])
 
 train_dataloader = DistributedDataLoader(train_data, batch_size = batch_size, shuffle = True)
@@ -309,7 +316,7 @@ if args.do_train:
     stop = False
 
     for epoch in range(st_epoch, epochs):
-        if bmt.rank == 0:
+        if bmt.rank() == 0:
             logger.info("Epoch {} begin...".format(epoch + 1))
         model.train()
         for step, data in enumerate(train_dataloader):
@@ -328,12 +335,12 @@ if args.do_train:
             optim_manager.step()
             
             if torch.torch.isnan(loss):
-                if bmt.rank == 0:
+                if bmt.rank() == 0:
                     logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | loss: {global_loss:.2f} | lr: {lr_scheduler.current_lr:.2f} | grad_norm: {grad_norm:.2f}")
                     logger.info(f"loss is nan, stop...")
                 stop = True
 
-            if step % log_iter == 0 and bmt.rank == 0:
+            if step % log_iter == 0 and bmt.rank() == 0:
                 elapsed_time = time.time() - st_time
                 etc_time = (elapsed_time)/(step+epoch*step_per_epoch+1)*total_step - elapsed_time
                 logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | etc: [{str(datetime.timedelta(seconds=etc_time))}] | loss: {global_loss:.2f} | lr: {lr_scheduler.current_lr:.2f} | grad_norm: {grad_norm:.2f}")
