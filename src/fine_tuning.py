@@ -54,7 +54,6 @@ if os.path.exists(os.path.join(args.output_dir, 'test_results.json')):
 
 bmt.init_distributed(seed=args.seed)
 
-MODEL_PATH = os.path.join(args.base_path, "ModelCenter", args.model_name)
 if args.model_name == "bertweet-base":
     PADDING_LEN = 128
 else:
@@ -174,7 +173,7 @@ def get_tokenizer(args, model_path):
 
     if args.model_name == "bertweet-base":
         tokenizer = AutoTokenizer.from_pretrained(os.path.join(model_path, "tokenizer"))
-    elif "prenorm" in args.model_name or "english" in args.model_name:
+    elif "prenorm" in args.model_name or "checkpoint" in args.model_name:
         from tokenizers import Tokenizer
         from transformers import PreTrainedTokenizerFast
 
@@ -196,7 +195,7 @@ def get_tokenizer(args, model_path):
     
     return tokenizer
 
-tokenizer = get_tokenizer(args, MODEL_PATH)
+tokenizer = get_tokenizer(args, args.model_path)
 logger.info(tokenizer)
 
 tokens_train = tokenizer.batch_encode_plus(
@@ -248,7 +247,7 @@ best_valid_result = 0
 st_epoch = 0
 st_time = time.time()
 
-model = get_model(args, MODEL_PATH, label_num)
+model = get_model(args, args.model_path, label_num)
 
 if args.do_train:
 
