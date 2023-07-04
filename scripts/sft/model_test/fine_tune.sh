@@ -1,10 +1,8 @@
-export CUDA_DEVICE
 export task
 export datasets_name
 
-export MASTER_PORT=602${CUDA_DEVICE}
+export MASTER_PORT=6025
 
-cuda_device=${CUDA_DEVICE}
 base_path=./
 data_process_method='single_label'
 model_type='roberta'
@@ -17,9 +15,8 @@ for dataset_name in ${datasets_name}; do {
     for model in ${models}; do {
         for seed in ${seeds}; do {
             for lr in ${lrs}; do {
-                CUDA_VISIBLE_DEVICES=${cuda_device} \
                 torchrun \
-                --master_port=${MASTER_PORT}${cuda_device} ./src/fine_tuning.py \
+                --master_port=${MASTER_PORT} ./src/fine_tuning.py \
                 --model_name ${model} \
                 --eval_strategy step \
                 --model_type ${model_type} \

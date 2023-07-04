@@ -148,6 +148,8 @@ def get_model(args, model_path, label_num):
     else:
         config = RobertaConfig.from_json_file("./config/deberta_prenorm.json")
         model_path = os.getenv("CHECKPOINT")
+        platform_config_path = os.getenv("PLATFORM_CONFIG_PATH")
+        model_path = os.path.join(json.load(open(platform_config_path, "r", encoding="utf-8"))["model_map"]["wx_lm"], args.model_name)
         bmt.print_rank("loading from model_path: {}".format(model_path))
         model = RobertaModel(config, model_path=model_path, label_num=label_num)
 
