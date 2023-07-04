@@ -17,7 +17,7 @@ class RobertaModel(torch.nn.Module):
         bmt.init_parameters(self.dense) # init dense layer
 
     def forward(self, *args, **kwargs):
-        pooler_output = self.model(*args, **kwargs).pooler_output
+        pooler_output = self.model(*args, **kwargs, output_pooler_output=True).pooler_output
         x = self.dense(pooler_output)
         return x
 
