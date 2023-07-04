@@ -113,13 +113,13 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     if args.lr_decay_style == 'linear':
         lr_scheduler = bmp.lr_scheduler.Linear(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 1000, 
+                                         warmup_iter = 10000, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0)
     elif args.lr_decay_style == 'cosine':
         lr_scheduler = bmp.lr_scheduler.Cosine(optimizer, 
                                          start_lr = current_lr*scale_factor,
-                                         warmup_iter = 1000, 
+                                         warmup_iter = 10000, 
                                          end_iter = args.lr_decay_iters,
                                          num_iter = 0) 
     return optimizer, lr_scheduler
@@ -136,7 +136,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.6)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.8)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
