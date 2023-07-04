@@ -3,6 +3,8 @@ export datasets_name
 
 rm -rf /data/results/*
 
+GPUS_PER_NODE=8
+
 DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                 --nproc_per_node=${GPUS_PER_NODE} \
                 --node_rank=${RANK} \
