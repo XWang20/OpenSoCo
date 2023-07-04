@@ -1,6 +1,4 @@
 import os
-
-
 import torch
 
 import bmtrain as bmt
@@ -11,6 +9,7 @@ from model_center.layer import Linear
 class RobertaModel(torch.nn.Module):
     def __init__(self, config, model_path, label_num):
         super().__init__()
+        bmt.print_rank(f"Loading config from model path {model_path}...")
         self.model = Roberta(config)
         bmt.print_rank(f"Loading roberta from model path {model_path}...")
         bmt.load(self.model, model_path)
