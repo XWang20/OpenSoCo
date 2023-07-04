@@ -53,7 +53,7 @@ def get_args():
     parser.add_argument("--learning_rate", type=float)
     parser.add_argument("--train_sample_num", type=int, default=1)
     parser.add_argument("--seed", type=int)
-    parser.add_argument("--epoch", type=int, default=30)
+    parser.add_argument("--epoch", type=int, default=1)
     parser.add_argument("--do_train", type=int, default=1)
     parser.add_argument("--output_dir", type=str, help="output directory.")
     parser.add_argument("--delete_checkpoint", type=bool)
@@ -335,7 +335,7 @@ def evaluate(model, dataloader):
 
 if args.do_train:
     # train
-    optim_manager = bmt.optim.OptimManager(loss_scale=2**20)
+    optim_manager = bmt.optim.OptimManager(loss_scale=128)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     stop = False
 
@@ -403,6 +403,8 @@ if args.do_train:
 
     # load delta weights
     model.load_state_dict(torch.load(BEST_MODEL_PATH), strict=False)
+
+bmt.synchronize()
 
 logger.info("Checking performance...\n")
 result = evaluate(model, test_dataloader)
