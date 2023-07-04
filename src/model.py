@@ -12,7 +12,7 @@ class RobertaModel(torch.nn.Module):
     def __init__(self, config, model_path, label_num):
         super().__init__()
         self.model = Roberta(config)
-        bmt.load(self.model, os.path.join(model_path, "model.pt"))
+        bmt.load(self.model, model_path)
         self.dense = Linear(config.dim_model, label_num)
         bmt.init_parameters(self.dense) # init dense layer
 
