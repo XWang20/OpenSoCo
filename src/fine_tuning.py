@@ -62,9 +62,9 @@ else:
 log_iter = 10
 epochs = args.epoch
 if args.adapter:
-    batch_size = 8
+    batch_size = 64
 else:
-    batch_size = 4
+    batch_size = 32
 warm_up_ratio = 0.01
 
 output_dir = args.output_dir
@@ -73,7 +73,6 @@ os.makedirs(output_dir, exist_ok=True)
 BEST_MODEL_PATH = os.path.join(output_dir, 'model.pt')
 TEST_RESULT_PATH = os.path.join(output_dir, 'test_results.json')
 VALIDATION_RESULT_PATH = os.path.join(output_dir, 'validation_result.json')
-
 
 logger = logging.getLogger(f'{args.dataset_name}_{args.model_name}_{args.seed}_{args.learning_rate}')
 logger.setLevel(level=logging.INFO)
@@ -233,7 +232,8 @@ test_data = TensorDataset(torch.tensor(tokens_test['input_ids']), \
     torch.tensor(tokens_test['attention_mask']), \
     torch.tensor(test_labels))
 
-logger.info(train_data[0])
+if bmt.rank == 0:
+    logger.info(train_data[0])
 
 train_dataloader = DistributedDataLoader(train_data, batch_size = batch_size, shuffle = True)
 val_dataloader = DistributedDataLoader(val_data, batch_size = batch_size, shuffle = False)
@@ -309,7 +309,8 @@ if args.do_train:
     stop = False
 
     for epoch in range(st_epoch, epochs):
-        logger.info("Epoch {} begin...".format(epoch + 1))
+        if bmt.rank == 0:
+            logger.info("Epoch {} begin...".format(epoch + 1))
         model.train()
         for step, data in enumerate(train_dataloader):
             optim_manager.zero_grad()
@@ -327,14 +328,15 @@ if args.do_train:
             optim_manager.step()
             
             if torch.torch.isnan(loss):
-                logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | loss: {global_loss} | lr: {lr_scheduler.current_lr} | grad_norm: {grad_norm}")
-                logger.info(f"loss is nan, stop...")
+                if bmt.rank == 0:
+                    logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | loss: {global_loss:.2f} | lr: {lr_scheduler.current_lr:.2f} | grad_norm: {grad_norm:.2f}")
+                    logger.info(f"loss is nan, stop...")
                 stop = True
 
-            if step % log_iter == 0:
+            if step % log_iter == 0 and bmt.rank == 0:
                 elapsed_time = time.time() - st_time
                 etc_time = (elapsed_time)/(step+epoch*step_per_epoch+1)*total_step - elapsed_time
-                logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | etc: [{str(datetime.timedelta(seconds=etc_time))}] | loss: {global_loss} | lr: {lr_scheduler.current_lr} | grad_norm: {grad_norm}")
+                logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | etc: [{str(datetime.timedelta(seconds=etc_time))}] | loss: {global_loss:.2f} | lr: {lr_scheduler.current_lr:.2f} | grad_norm: {grad_norm:.2f}")
 
             # evaluate
             if (step+1 == step_per_epoch) or (args.eval_strategy == "step" and (step+1) % 150 == 0):
@@ -343,12 +345,14 @@ if args.do_train:
 
                 if result[args.metric_for_best_model] > best_valid_result:
                     best_valid_result = result[args.metric_for_best_model]
-                    logger.info("saving the new best model...\n") # save checkpoint
+                    if bmt.rank() == 0:
+                        logger.info("saving the new best model...\n") # save checkpoint
                     torch.save(model.state_dict(), BEST_MODEL_PATH)
                     early_stopping = 0
 
                 # save result and state
-                logger.info(f"validation result: {result}\n")
+                if bmt.rank() == 0:
+                    logger.info(f"validation result: {result}\n")
                 validation_state = {"epoch": epoch, "step": step, "validation_result": result[args.metric_for_best_model], "best_validation_result": best_valid_result, "early_stopping": early_stopping}
                 
                 f = open(VALIDATION_RESULT_PATH, "a")
@@ -357,7 +361,8 @@ if args.do_train:
 
             # early stop
             if (early_stopping > 20) or (step+epoch*step_per_epoch+1) > 100000:
-                logger.info(f"{args.metric_for_best_model} have not rising for 5 evaluation or steps > 100,000. Stopping..")
+                if bmt.rank() == 0:
+                    logger.info(f"{args.metric_for_best_model} have not rising for 5 evaluation or steps > 100,000. Stopping..")
                 stop = True
 
             if stop:
@@ -365,21 +370,18 @@ if args.do_train:
         if stop:
             break
 
-    # 保存valid accuracy
-    f = open(TEST_RESULT_PATH, "a")
-    f.write(json.dumps({"validation result": best_valid_result})+"\n")
-    f.close()
-
     # load delta weights
     model.load_state_dict(torch.load(BEST_MODEL_PATH), strict=False)
 
 logger.info("Checking performance...\n")
 result = evaluate(model, test_dataloader)
-logger.info(f"test result: {result}")
-f = open(TEST_RESULT_PATH, "a")
-f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
-f.close()
 
-if args.delete_checkpoint:
-    for path in [BEST_MODEL_PATH]:
-        os.remove(path)
+if bmt.rank() == 0:
+    logger.info(f"test result: {result}")
+    f = open(TEST_RESULT_PATH, "a")
+    f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
+    f.close()
+
+    if args.delete_checkpoint:
+        for path in [BEST_MODEL_PATH]:
+            os.remove(path)

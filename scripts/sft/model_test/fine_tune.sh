@@ -1,7 +1,14 @@
 export task
 export datasets_name
 
-export MASTER_PORT=6025
+rm -rf /data/results/*
+
+DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
+                --nproc_per_node=${GPUS_PER_NODE} \
+                --node_rank=${RANK} \
+                --rdzv_id=1 \
+                --rdzv_backend=c10d \
+                --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
 
 base_path=./
 data_process_method='single_label'
@@ -15,8 +22,7 @@ for dataset_name in ${datasets_name}; do {
     for model in ${models}; do {
         for seed in ${seeds}; do {
             for lr in ${lrs}; do {
-                torchrun \
-                --master_port=${MASTER_PORT} ./src/fine_tuning.py \
+                torchrun ${DISTRIBUTED_ARGS} ./src/fine_tuning.py \
                 --model_name ${model} \
                 --eval_strategy step \
                 --model_type ${model_type} \
