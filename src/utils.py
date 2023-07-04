@@ -1,10 +1,7 @@
-from emoji import demojize
-from nltk.tokenize import TweetTokenizer
 import re
 import html
 import opencc
 t2s_convert=opencc.OpenCC('t2s.json')
-tokenizer = TweetTokenizer()
 
 with open('./src/change.txt') as f:
     mapping = {}

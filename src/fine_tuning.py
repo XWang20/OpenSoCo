@@ -60,7 +60,6 @@ if args.model_name == "bertweet-base":
 else:
     PADDING_LEN = 512
 
-
 log_iter = 10
 epochs = args.epoch
 if args.adapter:
@@ -73,7 +72,6 @@ output_dir = args.output_dir
 os.makedirs(output_dir, exist_ok=True)
 
 BEST_MODEL_PATH = os.path.join(output_dir, 'model.pt')
-CHECKPOINT_PATH = os.path.join(output_dir, 'checkpoint.pt')
 TEST_RESULT_PATH = os.path.join(output_dir, 'test_results.json')
 VALIDATION_RESULT_PATH = os.path.join(output_dir, 'validation_result.json')
 
@@ -148,7 +146,9 @@ def get_model(args, model_path, label_num):
         config = BertConfig.from_json_file(os.path.join(model_path, "config.json"))
         model = BertModel(config, model_path=model_path, label_num=label_num)
     else:
-        config = RobertaConfig.from_json_file(os.path.join(model_path, "config.json"))
+        config = RobertaConfig.from_json_file("./config/deberta_prenorm.json")
+        model_path = os.getenv("CHECKPOINT")
+        bmt.print_rank("loading from model_path: {}".format(model_path))
         model = RobertaModel(config, model_path=model_path, label_num=label_num)
 
     model = bmt.BMTrainModelWrapper(model)
@@ -164,7 +164,6 @@ def get_model(args, model_path, label_num):
             delta_model.freeze_module(exclude=["deltas", "classifier"], set_state_dict=True)
         delta_model.log()
 
-
     if args.model_path:
         model.load_state_dict(torch.load(args.model_path), strict=False)
     return model
@@ -177,7 +176,7 @@ def get_tokenizer(args, model_path):
         from tokenizers import Tokenizer
         from transformers import PreTrainedTokenizerFast
 
-        tokenizer_obj = Tokenizer.from_file(os.path.join(model_path, 'tokenizer.json'))
+        tokenizer_obj = Tokenizer.from_file("./config/tokenizer.json")
         tokenizer = PreTrainedTokenizerFast(tokenizer_object=tokenizer_obj)
         tokenizer.pad_token = '<pad>'
         tokenizer.eos_token = '</s>'
@@ -252,9 +251,8 @@ model = get_model(args, MODEL_PATH, label_num)
 if args.do_train:
 
     optimizer = bmt.optim.AdamOptimizer(model.parameters(),lr = args.learning_rate, weight_decay=1e-2, betas = (0.9, 0.999))
-    # optimizer = bmt.optim.AdamOptimizer(model.parameters(), lr = args.learning_rate, weight_decay=1e-2, betas = (0.9, 0.98))
 
-    lr_scheduler = bmt.lr_scheduler.Consine(optimizer, 
+    lr_scheduler = bmt.lr_scheduler.Linear(optimizer, 
                                             start_lr = args.learning_rate,
                                             warmup_iter = warm_up_ratio*total_step,
                                             end_iter = total_step)
