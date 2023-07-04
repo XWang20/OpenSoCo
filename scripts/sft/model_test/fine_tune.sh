@@ -23,7 +23,7 @@ for dataset_name in ${datasets_name}; do {
     for model in ${models}; do {
         for seed in ${seeds}; do {
             for lr in ${lrs}; do {
-                torchrun ${DISTRIBUTED_ARGS} ./src/fine_tuning.py \
+                python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ./src/fine_tuning.py \
                 --model_name ${model} \
                 --eval_strategy step \
                 --model_type ${model_type} \
