@@ -63,9 +63,9 @@ else:
 log_iter = 10
 epochs = args.epoch
 if args.adapter:
-    batch_size = 64
+    batch_size = 8
 else:
-    batch_size = 32
+    batch_size = 4
 warm_up_ratio = 0.01
 
 output_dir = args.output_dir
