@@ -40,7 +40,8 @@ def get_args():
     parser.add_argument("--delete_checkpoint", type=bool)
     parser.add_argument("--adapter", type=bool)
     parser.add_argument("--problem_type", type=str, default="single_label_classification")
-
+    parser.add_argument('--local_rank', type=int, default=None, help='local rank passed from distributed launcher')
+    
     return parser.parse_args()
 
 args=get_args()
