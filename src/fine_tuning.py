@@ -79,7 +79,7 @@ if args.model_name == "bertweet-base":
 else:
     PADDING_LEN = 512
 
-log_iter = 10
+log_iter = 100
 epochs = args.epoch
 if args.adapter:
     batch_size = 8
@@ -396,6 +396,8 @@ if args.do_train:
                 if bmt.rank() == 0:
                     logger.info(f"{args.metric_for_best_model} have not rising for 5 evaluation or steps > 100,000. Stopping..")
                 stop = True
+                bmt.synchronize()
+                break
 
             if stop:
                 break
