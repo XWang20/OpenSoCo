@@ -409,16 +409,19 @@ if args.do_train:
     bmt.load(model, BEST_MODEL_PATH, strict=False)
     bmt.synchronize()
 
-logger.info("Checking performance...\n")
+if bmt.rank() == 0:
+    logger.info("Checking performance...\n")
 result = evaluate(model, test_dataloader)
 
 if bmt.rank() == 0:
     logger.info(f"test result: {result}")
 
 f = open(TEST_RESULT_PATH, "a")
-f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
+if bmt.rank() == 0:
+    f.write(json.dumps({"validation result": best_valid_result, "test result": result}))
 f.close()
 
 if args.delete_checkpoint:
     for path in [BEST_MODEL_PATH]:
         os.remove(path)
+        os.system(f"rm -rf {path}")
