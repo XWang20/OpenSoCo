@@ -379,7 +379,7 @@ if args.do_train:
                     best_valid_result = result[args.metric_for_best_model]
                     if bmt.rank() == 0:
                         logger.info("saving the new best model...\n") # save checkpoint
-                    torch.save(model.state_dict(), BEST_MODEL_PATH)
+                    bmt.save(model, BEST_MODEL_PATH)
                     early_stopping = 0
 
                 # save result and state
@@ -401,11 +401,10 @@ if args.do_train:
                 break
         if stop:
             break
-
+    
     # load delta weights
-    model.load_state_dict(torch.load(BEST_MODEL_PATH), strict=False)
-
-bmt.synchronize()
+    bmt.load(model, BEST_MODEL_PATH, strict=False)
+    bmt.synchronize()
 
 logger.info("Checking performance...\n")
 result = evaluate(model, test_dataloader)
