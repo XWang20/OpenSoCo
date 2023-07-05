@@ -75,7 +75,7 @@ def get_optimizer(args, model):
 
         del states['state']
         optimizer_state = optimizer.state_dict()
-        optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.8
+        optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
         optimizer_state.update(states)
         optimizer.load_state_dict(optimizer_state)
 
@@ -139,7 +139,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.1)
+    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.1)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
