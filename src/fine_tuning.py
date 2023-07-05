@@ -359,10 +359,11 @@ if args.do_train:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, max_norm = 1.0, norm_type = 2)
             optim_manager.step()
             
-            if torch.torch.isnan(loss):
+            if torch.isnan(loss):
                 if bmt.rank() == 0:
                     logger.info(f"epoch: [{epoch+1}/{epochs}] | step: [{step+epoch*step_per_epoch+1}/{total_step}] | loss: {global_loss:.2f} | lr: {lr_scheduler.current_lr:.2f} | grad_norm: {grad_norm:.2f}")
                     logger.info(f"loss is nan, stop...")
+                bmt.synchronize()
                 stop = True
 
             if step % log_iter == 0 and bmt.rank() == 0:
