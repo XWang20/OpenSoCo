@@ -53,7 +53,7 @@ def get_args():
     parser.add_argument("--learning_rate", type=float)
     parser.add_argument("--train_sample_num", type=int, default=1)
     parser.add_argument("--seed", type=int)
-    parser.add_argument("--epoch", type=int, default=1)
+    parser.add_argument("--epoch", type=int, default=30)
     parser.add_argument("--do_train", type=int, default=1)
     parser.add_argument("--output_dir", type=str, help="output directory.")
     parser.add_argument("--delete_checkpoint", type=bool)
