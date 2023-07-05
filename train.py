@@ -75,7 +75,7 @@ def get_optimizer(args, model):
 
         del states['state']
         optimizer_state = optimizer.state_dict()
-        optimizer_state["param_groups"]["lr"] = optimizer_state["param_groups"]["lr"]*0.8
+        optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.8
         optimizer_state.update(states)
         optimizer.load_state_dict(optimizer_state)
 
