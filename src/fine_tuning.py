@@ -392,7 +392,7 @@ if args.do_train:
                 f.close()
 
             # early stop
-            if (early_stopping > 20) or (step+epoch*step_per_epoch+1) > 100000:
+            if (early_stopping > 10) or (step+epoch*step_per_epoch+1) > 100000:
                 if bmt.rank() == 0:
                     logger.info(f"{args.metric_for_best_model} have not rising for 5 evaluation or steps > 100,000. Stopping..")
                 stop = True
