@@ -42,7 +42,7 @@ OPTS+=" --hdfs-save ${HDFS_PATH}/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 
 OPTS+=" --load init_checkpoint/deberta-bmtrain.pt"
 OPTS+=" --warmup-iters 10000"
-OPTS+=" --lr-decay-style cosine"
+OPTS+=" --lr-decay-style linear"
 OPTS+=" --lr-decay-iters 1000000"
 OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 0.3"

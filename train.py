@@ -68,11 +68,14 @@ def get_optimizer(args, model):
         # optimizer.load_state_dict(states)
         
         # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
         states = torch.load(
-            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
+            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
         del states['state']
         optimizer_state = optimizer.state_dict()
+        optimizer_state["param_groups"]["lr"] = optimizer_state["param_groups"]["lr"]*0.8
         optimizer_state.update(states)
         optimizer.load_state_dict(optimizer_state)
 
