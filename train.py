@@ -424,7 +424,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 380000
+    args.start_step = 377500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
