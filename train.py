@@ -315,10 +315,10 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                                 labels: {data['labels']}\n''',
                         level=wandb.AlertLevel.WARN
                     )
-            elif skip_step < 6 and grad_norm > 1.0 and not torch.isinf(grad_norm):
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
+            # elif skip_step < 6 and grad_norm > 1.0 and not torch.isinf(grad_norm):
+            #     skip_step += 1
+            #     optim_manager.zero_grad()
+            #     bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
             else:
                 optim_manager.step()
                 skip_step = 0
