@@ -212,7 +212,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 65000 - 357500) * args.batch_size
+    st = (args.start_step + 70000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -315,10 +315,10 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                                 labels: {data['labels']}\n''',
                         level=wandb.AlertLevel.WARN
                     )
-            # elif skip_step < 6 and grad_norm > 1.0 and not torch.isinf(grad_norm):
-            #     skip_step += 1
-            #     optim_manager.zero_grad()
-            #     bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
+            elif skip_step < 1 and grad_norm > 1.0 and not torch.isinf(grad_norm):
+                skip_step += 1
+                optim_manager.zero_grad()
+                bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
             else:
                 optim_manager.step()
                 skip_step = 0
@@ -432,7 +432,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 395000
+    args.start_step = 392500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
