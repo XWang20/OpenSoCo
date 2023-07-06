@@ -139,7 +139,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.5)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.2)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
@@ -432,7 +432,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 397500
+    args.start_step = 395000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
