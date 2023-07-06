@@ -139,7 +139,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.2)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.18)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
@@ -212,7 +212,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 70000 - 357500) * args.batch_size
+    st = (args.start_step + 75000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -432,7 +432,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 392500
+    args.start_step = 400000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
