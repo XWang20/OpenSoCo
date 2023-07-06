@@ -108,7 +108,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
 
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = current_lr*scale_factor,
-                                                betas = (0.9, 0.98),
+                                                betas = (0.9, 0.95),
                                                 weight_decay=args.weight_decay)
 
     if args.lr_decay_iters is None:
@@ -212,7 +212,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 60000 - 357500) * args.batch_size
+    st = (args.start_step + 65000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
