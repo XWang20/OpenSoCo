@@ -1,5 +1,6 @@
 export task
 export datasets_name
+export data_process_method
 
 GPUS_PER_NODE=8
 
@@ -10,7 +11,6 @@ DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                 --master_port=${MASTER_PORT}"
 
 base_path=./
-data_process_method='single_label'
 model_type='roberta'
 seeds='42 123 1768'
 lrs='5e-4 1e-4 5e-5 1e-5'

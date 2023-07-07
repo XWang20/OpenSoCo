@@ -46,7 +46,7 @@ def get_args():
     parser.add_argument("--model_type", type=str)
     parser.add_argument("--model_name", type=str)
     parser.add_argument("--metric_for_best_model", type=str)
-    parser.add_argument("--data_process_method", type=str)
+    parser.add_argument("--data_process_method", type=str, default="single_label")
     parser.add_argument("--dataset_name", type=str)
     parser.add_argument("--dataset_path", type=str)
     parser.add_argument("--eval_strategy", type=str, default="step")
