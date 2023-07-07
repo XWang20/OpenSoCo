@@ -337,7 +337,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
             # if inspect nan loss, scale down the model
-            if skip_step > 1 and torch.isnan(grad_norm):
+            if skip_step > 2 and torch.isnan(grad_norm):
                 model = scale_down_model(scale = 10.0, model = model, args = args)
 
                 if args.report_to == "wandb" and bmp.rank() == 0:
