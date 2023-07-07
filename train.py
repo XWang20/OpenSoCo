@@ -380,13 +380,13 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
-            states = optimizer.state_dict()
-            del states['state']
-            optimizer_state = optimizer.state_dict()
-            optimizer_state.update(states)
-            optimizer.load_state_dict(optimizer_state)
-            optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-            bmp.synchronize()
+            # states = optimizer.state_dict()
+            # del states['state']
+            # optimizer_state = optimizer.state_dict()
+            # optimizer_state.update(states)
+            # optimizer.load_state_dict(optimizer_state)
+            # optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+            # bmp.synchronize()
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
 
@@ -432,7 +432,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 402000
+    args.start_step = 403000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
