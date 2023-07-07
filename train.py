@@ -128,7 +128,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
-    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale)
+    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=256)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     return optim_manager
 
@@ -432,7 +432,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 403000
+    args.start_step = 403500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
