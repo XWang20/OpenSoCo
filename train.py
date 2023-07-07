@@ -336,16 +336,16 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
-            # if inspect nan loss, scale down the model
-            if skip_step > 2 and torch.isnan(grad_norm):
-                model = scale_down_model(scale = 10.0, model = model, args = args)
+            # # if inspect nan loss, scale down the model
+            # if skip_step > 2 and torch.isnan(grad_norm):
+            #     model = scale_down_model(scale = 10.0, model = model, args = args)
 
-                if args.report_to == "wandb" and bmp.rank() == 0:
-                    wandb.alert(
-                        title="Nan loss inspected.",
-                        text="inspected nan loss. scale model by factor 10.",
-                        level=wandb.AlertLevel.WARN
-                    )
+            #     if args.report_to == "wandb" and bmp.rank() == 0:
+            #         wandb.alert(
+            #             title="Nan loss inspected.",
+            #             text="inspected nan loss. scale model by factor 10.",
+            #             level=wandb.AlertLevel.WARN
+            #         )
 
         # log the training state to console
         if (start_step + step + 1) % args.log_iters == 0:
@@ -380,13 +380,13 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
-            # states = optimizer.state_dict()
-            # del states['state']
-            # optimizer_state = optimizer.state_dict()
-            # optimizer_state.update(states)
-            # optimizer.load_state_dict(optimizer_state)
-            # optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-            # bmp.synchronize()
+            states = optimizer.state_dict()
+            del states['state']
+            optimizer_state = optimizer.state_dict()
+            optimizer_state.update(states)
+            optimizer.load_state_dict(optimizer_state)
+            optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+            bmp.synchronize()
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
 
