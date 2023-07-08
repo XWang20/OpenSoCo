@@ -49,39 +49,48 @@ def get_model(args):
         if torch.isnan(param).sum() > 0:
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
             exit(0)
+    
+    model = model.to(torch.bfloat16)
     return model
 
 def get_optimizer(args, model):
-    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
-                                                lr = args.lr,
-                                                betas = (0.9, 0.95),
-                                                weight_decay=args.weight_decay)
+    # change to bf16
+    optimizer = torch.optim.adam(model.parameters(),
+                                 lr = 1e-5,
+                                 betas = (0.9, 0.95),
+                                 weight_decay=args.weight_decay)
 
-    if args.save is not None:
-        bmp.print_rank("Loading the optimizer...")
+    # fp16
+    # optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
+    #                                             lr = args.lr,
+    #                                             betas = (0.9, 0.95),
+    #                                             weight_decay=args.weight_decay)
+    
+    # if args.save is not None:
+    #     bmp.print_rank("Loading the optimizer...")
         
-        # # if use the momentum, load optimizer
-        # states = torch.load(
-        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+    #     # # if use the momentum, load optimizer
+    #     # states = torch.load(
+    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # # if use the momentum, load the "state" in the optimizer state_dict
-        # optimizer.load_state_dict(states)
+    #     # # if use the momentum, load the "state" in the optimizer state_dict
+    #     # optimizer.load_state_dict(states)
         
-        # if dont use the momentum, delete the "state" in the optimizer state_dict
-        # states = torch.load(
-        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
-        states = torch.load(
-            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
+    #     # if dont use the momentum, delete the "state" in the optimizer state_dict
+    #     # states = torch.load(
+    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
+    #     states = torch.load(
+    #         os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
-        del states['state']
-        optimizer_state = optimizer.state_dict()
-        # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
-        optimizer_state.update(states)
-        optimizer.load_state_dict(optimizer_state)
+    #     del states['state']
+    #     optimizer_state = optimizer.state_dict()
+    #     # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
+    #     optimizer_state.update(states)
+    #     optimizer.load_state_dict(optimizer_state)
 
-        for name, param in optimizer.state_dict().items():
-            if name == "param_groups":
-                bmp.print_rank(name, param)
+    #     for name, param in optimizer.state_dict().items():
+    #         if name == "param_groups":
+    #             bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -139,7 +148,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.15)
+    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.15)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
