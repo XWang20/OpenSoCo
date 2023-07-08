@@ -138,8 +138,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
-    # optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=256)
-    optim_manager = bmp.optim.OptimManager(loss_scale = None)
+    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=256)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     return optim_manager
 
@@ -264,7 +263,6 @@ def scale_down_model(scale, model, args):
 
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     start_step = args.start_step
