@@ -55,7 +55,7 @@ def get_model(args):
 
 def get_optimizer(args, model):
     # change to bf16
-    optimizer = torch.optim.adam(model.parameters(),
+    optimizer = torch.optim.Adam(model.parameters(),
                                  lr = 1e-5,
                                  betas = (0.9, 0.95),
                                  weight_decay=args.weight_decay)
