@@ -30,6 +30,7 @@ def get_last_step(args, current_step):
 
 def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
+    config.dtype=torch.bfloat16
     assert isinstance(config, RobertaConfig)
     model = Roberta(config)
 
