@@ -190,7 +190,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
     model.eval()
     valid_loss = 0
     with torch.no_grad():
-        for step, data in enumerate(dev_dataloader):
+        for _, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
@@ -224,7 +224,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 61000 - 357500) * args.batch_size
+    st = (args.start_step + 62000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -445,7 +445,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 410500
+    args.start_step = 411000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
