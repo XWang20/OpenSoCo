@@ -30,7 +30,7 @@ def get_last_step(args, current_step):
 
 def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
-    config.dtype=torch.bfloat16
+    # config.dtype=torch.bfloat16
     assert isinstance(config, RobertaConfig)
     model = Roberta(config)
 
@@ -51,47 +51,47 @@ def get_model(args):
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
             exit(0)
     
-    model = model.to(torch.bfloat16)
+    # model = model.to(torch.bfloat16)
     return model
 
 def get_optimizer(args, model):
     # change to bf16
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 lr = 1e-5,
-                                 betas = (0.9, 0.95),
-                                 weight_decay=args.weight_decay)
+    # optimizer = torch.optim.Adam(model.parameters(),
+    #                              lr = 1e-5,
+    #                              betas = (0.9, 0.95),
+    #                              weight_decay=args.weight_decay)
 
-    # # fp16
-    # optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
-    #                                             lr = args.lr,
-    #                                             betas = (0.9, 0.95),
-    #                                             weight_decay=args.weight_decay)
+    # fp16
+    optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
+                                                lr = args.lr,
+                                                betas = (0.9, 0.95),
+                                                weight_decay=args.weight_decay)
     
-    # if args.save is not None:
-    #     bmp.print_rank("Loading the optimizer...")
+    if args.save is not None:
+        bmp.print_rank("Loading the optimizer...")
         
-    #     # # if use the momentum, load optimizer
-    #     # states = torch.load(
-    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+        # # if use the momentum, load optimizer
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-    #     # # if use the momentum, load the "state" in the optimizer state_dict
-    #     # optimizer.load_state_dict(states)
+        # # if use the momentum, load the "state" in the optimizer state_dict
+        # optimizer.load_state_dict(states)
         
-    #     # if dont use the momentum, delete the "state" in the optimizer state_dict
-    #     # states = torch.load(
-    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
-    #     states = torch.load(
-    #         os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
+        # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
+        states = torch.load(
+            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
-    #     del states['state']
-    #     optimizer_state = optimizer.state_dict()
-    #     # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
-    #     optimizer_state.update(states)
-    #     optimizer.load_state_dict(optimizer_state)
+        del states['state']
+        optimizer_state = optimizer.state_dict()
+        # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
+        optimizer_state.update(states)
+        optimizer.load_state_dict(optimizer_state)
 
-    #     for name, param in optimizer.state_dict().items():
-    #         if name == "param_groups":
-    #             bmp.print_rank(name, param)
+        for name, param in optimizer.state_dict().items():
+            if name == "param_groups":
+                bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -150,7 +150,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.15)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.2)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
@@ -264,8 +264,8 @@ def scale_down_model(scale, model, args):
 
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
-    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    # loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     start_step = args.start_step
     skip_step = 0
@@ -308,7 +308,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         # step optimizer
         if (start_step + step + 1) % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
-            if torch.isnan(grad_norm):
+            if skip_step < 1 and torch.isnan(grad_norm):
                 # if nan grad norm inspected, skip the current step
                 skip_step += 1
                 optim_manager.zero_grad()
