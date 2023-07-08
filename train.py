@@ -54,6 +54,29 @@ def get_model(args):
     # model = model.to(torch.bfloat16)
     return model
 
+def reload_model(args, model, optimizer, lr_scheduler, step):
+    bmp.print_rank("Skip step > 2. Now reload the last saved checkpoint.")
+
+    # get model
+    load_step = step//500 * 500
+    ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{load_step}.pt")
+    bmp.load(model, ckpt_path)
+    bmp.synchronize()
+
+    # get optimizer
+    optimizer = os.path.join(args.save, "checkpoints", f"checkpoint-{load_step}.opt")
+    states = optimizer.state_dict()
+    del states['state']
+    optimizer_state = optimizer.state_dict()
+    optimizer_state.update(states)
+    optimizer.load_state_dict(optimizer_state)
+    bmp.synchronize()
+
+    # get optim_manager
+    optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+    bmp.synchronize()
+    return model, optim_manager
+
 def get_optimizer(args, model):
     # change to bf16
     # optimizer = torch.optim.Adam(model.parameters(),
@@ -349,6 +372,9 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
+            if skip_step > 2:
+                model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+                
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
             #     model = scale_down_model(scale = 10.0, model = model, args = args)
@@ -392,14 +418,6 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             # save optimizer
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
-
-            states = optimizer.state_dict()
-            del states['state']
-            optimizer_state = optimizer.state_dict()
-            optimizer_state.update(states)
-            optimizer.load_state_dict(optimizer_state)
-            optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-            bmp.synchronize()
 
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
 
@@ -445,7 +463,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 411000
+    args.start_step = 411500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
