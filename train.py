@@ -262,7 +262,8 @@ def scale_down_model(scale, model, args):
 
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = torch.nn.CrossEntropyLoss()
 
     start_step = args.start_step
     skip_step = 0
