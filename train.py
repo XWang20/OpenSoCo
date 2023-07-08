@@ -71,7 +71,7 @@ def reload_model(args, model, optimizer, lr_scheduler, step):
     # optimizer_state.update(states)
     # optimizer.load_state_dict(optimizer_state)
     # bmp.synchronize()
-    
+
     optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.9)
     # get optim_manager
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
@@ -464,7 +464,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 411500
+    args.start_step = 411000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
