@@ -138,8 +138,8 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
-    # optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=256)
-    optim_manager = bmp.optim.OptimManager(loss_scale = None)
+    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=128)
+    # optim_manager = bmp.optim.OptimManager(loss_scale = None)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     return optim_manager
 
@@ -195,7 +195,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-            bmp.print_rank(f"step: {step} | batch_size: {input_ids.size()} | loss: {loss}")
+            # bmp.print_rank(f"step: {step} | batch_size: {input_ids.size()} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
 
