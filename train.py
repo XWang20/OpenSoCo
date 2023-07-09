@@ -143,7 +143,8 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = current_lr*scale_factor,
                                                 betas = (0.9, 0.95),
-                                                weight_decay=args.weight_decay)
+                                                weight_decay=args.weight_decay,
+                                                eps=1e-6)
 
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
