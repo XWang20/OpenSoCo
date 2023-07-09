@@ -312,15 +312,11 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             writer = SummaryWriter(tensorboard_dir)
         else:
             writer = None
-    total_skips = 0
 
     # evaluate model before training
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
-        if total_skips > 0:
-            total_skips -= 1
-            continue
         if (start_step + step + 1) % args.gradient_accumulate == 1:
             optim_manager.zero_grad() # when not doing
         input_ids = data['input_ids'].cuda()
@@ -393,8 +389,6 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     optimizer.load_state_dict(optimizer_state)
                     bmp.synchronize()
                     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-                # skip 10 batches
-                total_skips = 100
 
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
@@ -484,7 +478,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 414000
+    args.start_step = 410000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":

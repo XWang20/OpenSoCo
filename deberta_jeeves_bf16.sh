@@ -8,7 +8,7 @@ ls /mnt/data/user/tc_agi/user/wangxing
 du -h /data
 ls -l -ch /data
 
-GPUS_PER_NODE=8
+GPUS_PER_NODE=1
 
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
