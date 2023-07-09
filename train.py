@@ -384,22 +384,22 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
-            if skip_step > 0:
-                # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                if check_model_param(model):
-                    bmp.print_rank("reload last ckpt model.")
-                    model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                else:
-                    # get optimizer
-                    states = optimizer.state_dict()
-                    del states['state']
-                    optimizer_state = optimizer.state_dict()
-                    optimizer_state.update(states)
-                    optimizer.load_state_dict(optimizer_state)
-                    bmp.synchronize()
-                    optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-                # skip 10 batches
-                total_skips = 10
+            # if skip_step > 0:
+            #     # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+            #     if check_model_param(model):
+            #         bmp.print_rank("reload last ckpt model.")
+            #         model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+            #     else:
+            #         # get optimizer
+            #         states = optimizer.state_dict()
+            #         del states['state']
+            #         optimizer_state = optimizer.state_dict()
+            #         optimizer_state.update(states)
+            #         optimizer.load_state_dict(optimizer_state)
+            #         bmp.synchronize()
+            #         optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+            #     # skip 10 batches
+            #     total_skips = 10
 
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
