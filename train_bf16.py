@@ -149,13 +149,11 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.15)
-    optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
     bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
     bmp.synchronize()
-    return model, optimizer, lr_scheduler, optim_manager
+    return model, optimizer, lr_scheduler
 
 def get_train_dataset(args):
     bmp.print_rank(f"load dataset from path {args.input_dataset}")
@@ -354,14 +352,6 @@ def pretrain(args, model, optimizer, lr_scheduler, train_dataset, dev_dataloader
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
-            states = optimizer.state_dict()
-            del states['state']
-            optimizer_state = optimizer.state_dict()
-            optimizer_state.update(states)
-            optimizer.load_state_dict(optimizer_state)
-            optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
-            bmp.synchronize()
-
             bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
 
 def init_wandb(args):
@@ -415,7 +405,7 @@ def main():
     
     bmp.print_rank(args)
 
-    model, optimizer, lr_scheduler, optim_manager = setup_model_and_optimizer(args)
+    model, optimizer, lr_scheduler = setup_model_and_optimizer(args)
     train_dataset = get_train_dataset(args)
     valid_dataset = get_valid_dataset(args.test_dataset)
     dev_dataloader = DistributedDataLoader(valid_dataset, batch_size=args.batch_size, shuffle=False)

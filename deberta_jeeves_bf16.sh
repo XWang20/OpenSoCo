@@ -1,5 +1,6 @@
 #! /bin/bash
 
+pip install bmtrain==0.1.8
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
