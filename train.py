@@ -28,6 +28,13 @@ def get_last_step(args, current_step):
             last_step = step
     return last_step
 
+def check_model_param(model):
+    for name, param in model.named_parameters():
+        if torch.isnan(param).sum() > 0:
+            bmp.print_rank(f"NaN values found in parameter {name}. ")
+            return True
+    return False
+
 def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
     # config.dtype=torch.bfloat16
@@ -45,12 +52,10 @@ def get_model(args):
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
         ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
         bmp.load(model, ckpt_path)
-
-    for name, param in model.named_parameters():
-        if torch.isnan(param).sum() > 0:
-            bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
-            exit(0)
     
+    if check_model_param(model):
+        bmp.print_rank("Aborting training. ")
+        exit(0)
     # model = model.to(torch.bfloat16)
     return model
 
@@ -312,11 +317,15 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             writer = SummaryWriter(tensorboard_dir)
         else:
             writer = None
-    
+    total_skips = 0
+
     # evaluate model before training
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
+        if total_skips > 0:
+            total_skips -= 1
+            continue
         if (start_step + step + 1) % args.gradient_accumulate == 1:
             optim_manager.zero_grad() # when not doing
         input_ids = data['input_ids'].cuda()
@@ -375,14 +384,20 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
             if skip_step > 0:
                 # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                # get optimizer
-                states = optimizer.state_dict()
-                del states['state']
-                optimizer_state = optimizer.state_dict()
-                optimizer_state.update(states)
-                optimizer.load_state_dict(optimizer_state)
-                bmp.synchronize()
-                optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+                if check_model_param(model):
+                    bmp.print_rank("reload last ckpt model.")
+                    model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+                else:
+                    # get optimizer
+                    states = optimizer.state_dict()
+                    del states['state']
+                    optimizer_state = optimizer.state_dict()
+                    optimizer_state.update(states)
+                    optimizer.load_state_dict(optimizer_state)
+                    bmp.synchronize()
+                    optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+                # skip 10 batches
+                total_skips = 10
 
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
