@@ -261,8 +261,7 @@ def scale_down_model(scale, model, args):
             exit(0)
     return model
 
-
-def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
+def pretrain(args, model, optimizer, lr_scheduler, train_dataset, dev_dataloader):
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
 
     start_step = args.start_step
@@ -292,7 +291,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
-            optim_manager.zero_grad() # when not doing
+            optimizer.zero_grad() # when not doing
         input_ids = data['input_ids'].cuda()
         attention_mask = data['attention_mask'].cuda()
         labels = data['labels'].cuda()
@@ -301,62 +300,26 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         global_loss = bmp.sum_loss(loss).item()
         log_loss += global_loss
         loss = loss / args.gradient_accumulate
-        optim_manager.backward(loss)
+        # loss = optimizer.loss_scale(loss)
+        loss.backward()
 
         # step optimizer
         if (start_step + step + 1) % args.gradient_accumulate == 0:
-            grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
-            if torch.isnan(grad_norm):
-                # if nan grad norm inspected, skip the current step
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
-                tokenizer = get_tokenizer()
-                # print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
-                #       labels: {data['labels']}''')
-
-                if args.report_to == "wandb" and bmp.rank() == 0:
-                    wandb.alert(
-                        title="Nan loss inspected.",
-                        text=f'''inspected nan loss. skip the current step.\n
-                                step: {step+start_step+1}\n
-                                text: {tokenizer.batch_decode(data['input_ids'])}\n
-                                input_ids: {data['input_ids']}\n
-                                attention_mask: {data['attention_mask']}\n
-                                labels: {data['labels']}\n''',
-                        level=wandb.AlertLevel.WARN
-                    )
-            elif skip_step < 1 and grad_norm > 1.0 and not torch.isinf(grad_norm):
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
-            else:
-                optim_manager.step()
-                skip_step = 0
+            grad_norm = bmp.optim.clip_grad_norm(optimizer.param_groups, max_norm= args.clip_grad, scale = optimizer.scale, norm_type = 2)
+            bmp.optim_step(optimizer, lr_scheduler)
 
             # update the training state to the integrations
             if bmp.rank() == 0:
                 if args.report_to == "wandb":
                     wandb.log({"loss/train": global_loss, 
                             "grad_norm": grad_norm,
-                            "loss_scale": optim_manager.loss_scale,
+                            # "loss_scale": optim_manager.loss_scale,
                             "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
                 elif args.report_to == "tensorboard":
                     writer.add_scalar("loss/train", global_loss, step + start_step + 1)
                     writer.add_scalar("grad_norm", grad_norm, step + start_step + 1)
-                    writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
+                    # writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
-
-            # # if inspect nan loss, scale down the model
-            # if skip_step > 2 and torch.isnan(grad_norm):
-            #     model = scale_down_model(scale = 10.0, model = model, args = args)
-
-            #     if args.report_to == "wandb" and bmp.rank() == 0:
-            #         wandb.alert(
-            #             title="Nan loss inspected.",
-            #             text="inspected nan loss. scale model by factor 10.",
-            #             level=wandb.AlertLevel.WARN
-            #         )
 
         # log the training state to console
         if (start_step + step + 1) % args.log_iters == 0:
@@ -366,7 +329,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                         step + 1 + start_step,
                         log_loss / args.log_iters,
                         lr_scheduler.current_lr,
-                        optim_manager.loss_scale,
+                        # optim_manager.loss_scale,
                         grad_norm
                     )
                 )
@@ -460,7 +423,7 @@ def main():
     bmp.print_rank("finish loading dataset.")
     bmp.synchronize()
 
-    pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader)
+    pretrain(args, model, optimizer, lr_scheduler, train_dataset, dev_dataloader)
 
 if __name__ == '__main__':
     main()
