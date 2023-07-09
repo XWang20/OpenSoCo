@@ -1,6 +1,6 @@
 #! /bin/bash
 
-pip install git+https://git.in.zhihu.com/wx8993/bmtrain.git
+pip install -v -e ./bmtrain
 
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
