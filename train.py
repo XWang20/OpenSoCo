@@ -162,7 +162,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
-    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=128)
+    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=64)
     # optim_manager = bmp.optim.OptimManager(loss_scale = None)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     return optim_manager
@@ -248,7 +248,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 71000 - 357500) * args.batch_size
+    st = (args.start_step + 72000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
