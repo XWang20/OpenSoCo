@@ -248,7 +248,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 70000 - 357500) * args.batch_size
+    st = (args.start_step + 71000 - 357500) * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -373,9 +373,17 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
-            if skip_step > 2:
-                model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                
+            if skip_step > 0:
+                # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+                # get optimizer
+                states = optimizer.state_dict()
+                del states['state']
+                optimizer_state = optimizer.state_dict()
+                optimizer_state.update(states)
+                optimizer.load_state_dict(optimizer_state)
+                bmp.synchronize()
+                optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
             #     model = scale_down_model(scale = 10.0, model = model, args = args)
@@ -464,7 +472,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 410000
+    args.start_step = 412000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
