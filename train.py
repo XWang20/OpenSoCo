@@ -341,12 +341,14 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         # step optimizer
         if (start_step + step + 1) % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
-            if skip_step < 1 and torch.isnan(grad_norm):
+            # if skip_step < 1 and torch.isnan(grad_norm):
+            if torch.isnan(grad_norm):
                 # if nan grad norm inspected, skip the current step
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
-                tokenizer = get_tokenizer()
+                bmp.print_rank(f"Nan grad norm.")
+                # skip_step += 1
+                # optim_manager.zero_grad()
+                # bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
+                # tokenizer = get_tokenizer()
                 # print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
                 #       labels: {data['labels']}''')
 
@@ -487,7 +489,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 413000
+    args.start_step = 413500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
