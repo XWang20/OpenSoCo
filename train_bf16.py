@@ -147,9 +147,9 @@ def setup_model_and_optimizer(args):
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
     bmp.synchronize()
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+    bmp.synchronize()
     # get the memory usage
     bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
-    bmp.synchronize()
     return model, optimizer, lr_scheduler, optim_manager
 
 def get_train_dataset(args):
