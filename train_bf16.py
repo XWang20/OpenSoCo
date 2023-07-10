@@ -2,14 +2,13 @@ import torch,os
 import bmtrain as bmp
 from model_center.model import Roberta, RobertaConfig
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
-from model_center.utils import print_inspect
 from dataset import BertDataset
 import time
 import datetime 
 from arguments import get_args
 from scale_model import scale_roberta_model
-from tokenizer import get_tokenizer
-import os
+
+from typing import Optional
 from bmtrain.loss.cross_entropy import OpFusedCrossEntropy, OpFusedCrossEntropyInplace
 
 class FusedCrossEntropy(torch.nn.Module):
