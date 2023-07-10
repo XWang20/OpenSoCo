@@ -150,6 +150,7 @@ def setup_model_and_optimizer(args):
     bmp.synchronize()
     # get the memory usage
     bmp.print_rank("Model mem\n", torch.cuda.memory_summary())
+    bmp.synchronize()
     return model, optimizer, lr_scheduler, optim_manager
 
 def get_train_dataset(args):
