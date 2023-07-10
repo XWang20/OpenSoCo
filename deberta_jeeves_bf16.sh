@@ -1,6 +1,8 @@
 #! /bin/bash
 
-# export NCCL_P2P_DISABLE=1
+pip install -v -e ./bmtrain
+
+export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
 
 pip install model_center==0.1.3
