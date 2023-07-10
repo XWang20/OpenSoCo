@@ -36,15 +36,14 @@ def get_model(args):
     # make checkpoint dir
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
 
-    # if (args.load != None) and (args.start_step == 0):
-    #     bmp.print_rank(f"Loading from checkpoint {args.load}...")
-    #     bmp.load(model, args.load)
-    # else:
-    #     bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
-    #     ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
-    #     bmp.load(model, ckpt_path)
+    if (args.load != None) and (args.start_step == 0):
+        bmp.print_rank(f"Loading from checkpoint {args.load}...")
+        bmp.load(model, args.load)
+    else:
+        bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
+        ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
+        bmp.load(model, ckpt_path)
 
-    bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
@@ -56,8 +55,8 @@ def get_model(args):
 def get_optimizer(args, model):
     # change to bf16
     optimizer = torch.optim.Adam(model.parameters(),
-                                 lr = args.lr,
-                                 betas = (0.9, 0.98),
+                                 lr = 1e-5,
+                                 betas = (0.9, 0.95),
                                  weight_decay=args.weight_decay)
 
     # # fp16
@@ -182,7 +181,8 @@ def get_valid_dataset(dataset_path):
 
     return bert_dataset
 
-def valid(args, model, dev_dataloader, loss_func, step, writer):
+def valid(args, model, dev_dataloader, step, writer):
+    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
     bmp.print_rank("start valid! ")
     model.eval()
     valid_loss = 0
@@ -190,9 +190,11 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
         for valid_step, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
+            print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
+            print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-            print(f"step: {valid_step} | loss: {loss} | rank: {bmp.rank()}")
+            print(f"rank: {bmp.rank()} | step: {valid_step} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
 
@@ -260,9 +262,7 @@ def scale_down_model(scale, model, args):
     return model
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
-
-    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
     start_step = args.start_step
     log_loss = 0
@@ -286,7 +286,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             writer = None
     
     # evaluate model before training
-    valid(args, model, dev_dataloader, loss_func, start_step, writer)
+    valid(args, model, dev_dataloader, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
@@ -310,8 +310,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             if bmp.rank() == 0:
                 if args.report_to == "wandb":
                     wandb.log({"loss/train": global_loss, 
-                                "grad_norm": grad_norm,
-                                "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
+                            "grad_norm": grad_norm,
+                            "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
                 elif args.report_to == "tensorboard":
                     writer.add_scalar("loss/train", global_loss, step + start_step + 1)
                     writer.add_scalar("grad_norm", grad_norm, step + start_step + 1)
@@ -325,13 +325,14 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                         step + 1 + start_step,
                         log_loss / args.log_iters,
                         lr_scheduler.current_lr,
+                        # optim_manager.loss_scale,
                         grad_norm
                     )
                 )
             log_loss = 0
 
         if (start_step + step + 1) % args.valid_iters == 0:
-            valid(args, model, dev_dataloader, loss_func, start_step + step + 1, writer)
+            valid(args, model, dev_dataloader, start_step + step + 1, writer)
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
