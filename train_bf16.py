@@ -53,7 +53,7 @@ def get_model(args):
     # checkpoint_file_path = os.getenv("CHECKPOINT")
 
     
-    model = model.to(torch.bfloat16)
+    # model = model.to(torch.bfloat16)
     return model
 
 def get_optimizer(args, model):
