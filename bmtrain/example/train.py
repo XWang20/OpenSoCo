@@ -52,8 +52,8 @@ def main():
         if i == bmt.rank():
             break
     
-    # loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
-    loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    # loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
     optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=1e-2)
     optimizer = torch.optim.Adam(model.parameters(),
                                  weight_decay=1e-2)
