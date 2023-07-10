@@ -34,18 +34,19 @@ def get_model(args):
     # make checkpoint dir
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
 
-    if (args.load != None) and (args.start_step == 0):
-        bmp.print_rank(f"Loading from checkpoint {args.load}...")
-        bmp.load(model, args.load)
-    else:
-        bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
-        ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
-        bmp.load(model, ckpt_path)
+    # if (args.load != None) and (args.start_step == 0):
+    #     bmp.print_rank(f"Loading from checkpoint {args.load}...")
+    #     bmp.load(model, args.load)
+    # else:
+    #     bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
+    #     ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
+    #     bmp.load(model, ckpt_path)
 
-    for name, param in model.named_parameters():
-        if torch.isnan(param).sum() > 0:
-            bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
-            exit(0)
+    # for name, param in model.named_parameters():
+    #     if torch.isnan(param).sum() > 0:
+    #         bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
+    #         exit(0)
+    bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-392500.pt")
     
     model = model.to(torch.bfloat16)
     return model
@@ -286,7 +287,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         writer = None
     
     # evaluate model before training
-    # valid(args, model, dev_dataloader, start_step, writer)
+    valid(args, model, dev_dataloader, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
@@ -394,7 +395,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 413500
+    args.start_step = 392500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
