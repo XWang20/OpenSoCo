@@ -37,7 +37,7 @@ def check_model_param(model):
 
 def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
-    config.dtype=torch.float
+    # config.dtype=torch.bfloat16
     assert isinstance(config, RobertaConfig)
     model = Roberta(config)
 
@@ -56,7 +56,7 @@ def get_model(args):
     if check_model_param(model):
         bmp.print_rank("Aborting training. ")
         exit(0)
-    model = model.to(torch.float)
+    # model = model.to(torch.bfloat16)
     return model
 
 def reload_model(args, model, optimizer, lr_scheduler, step):
@@ -175,7 +175,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.05)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.5)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
@@ -220,7 +220,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-            print(f"rank: {bmp.rank()} | step: {step} | loss: {loss}")
+            # bmp.print_rank(f"step: {step} | batch_size: {input_ids.size()} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
 
@@ -289,9 +289,7 @@ def scale_down_model(scale, model, args):
 
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
-    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100, reduction="mean")
-
+    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
     start_step = args.start_step
     skip_step = 0

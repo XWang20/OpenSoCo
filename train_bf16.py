@@ -49,8 +49,8 @@ def get_model(args):
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
             exit(0)
     # bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
-    # checkpoint_file_path = os.getenv("CHECKPOINT")
-    # bmp.load(model, os.path.join(checkpoint_file_path, "checkpoint-413500.pt"))
+    checkpoint_file_path = os.getenv("CHECKPOINT")
+    bmp.load(model, os.path.join(checkpoint_file_path, "checkpoint-413500.pt"))
     
     model = model.to(torch.bfloat16)
     return model
