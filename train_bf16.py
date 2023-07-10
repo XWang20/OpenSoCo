@@ -1,7 +1,10 @@
 import torch,os
 import bmtrain as bmp
-from model_center.model import Roberta, RobertaConfig
+from roberta import Roberta
+
+from model_center.model import RobertaConfig
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
+
 from dataset import BertDataset
 import time
 import datetime 
