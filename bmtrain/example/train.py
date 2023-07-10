@@ -70,6 +70,8 @@ def main():
     avg_loss_recorder = bmt.utils.AverageRecorder()
 
     with torch.no_grad():
+        st = time.time()
+
         pos = torch.arange(enc_input.size(1)).long().cuda().repeat(enc_input.size(0), 1)
         logits = model(
                 enc_input,
@@ -93,7 +95,6 @@ def main():
                 iteration,
                 global_loss,
                 avg_loss_recorder.value,
-                optim_manager.loss_scale,
                 avg_time_recorder.value
             )
         )
