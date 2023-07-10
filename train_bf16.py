@@ -44,7 +44,7 @@ def get_model(args):
     #     ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
     #     bmp.load(model, ckpt_path)
 
-    bmp.load(model, "/mnt/models/user/luca_model/klara/models/wx_lm/v20230710/train-model/checkpoint-413500.pt")
+    bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
