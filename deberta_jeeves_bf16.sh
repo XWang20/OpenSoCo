@@ -17,7 +17,7 @@ if [ ${IDC} == klara-2-pek02 ]; then
                     --master_port=${MASTER_PORT} \
                     --rdzv_id=1 \
                     --rdzv_backend=c10d \
-                    --rdzv_endpoint=${MASTER_ADDR}:${MASTER_PORT}"
+                    --rdzv_endpoint=${MASTER_ENDPOINT}"
 else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
