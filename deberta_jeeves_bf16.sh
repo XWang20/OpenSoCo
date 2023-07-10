@@ -1,3 +1,4 @@
+#! /bin/bash
 
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
@@ -13,7 +14,7 @@ if [ ${IDC} == klara-2-pek02 ]; then
                     --nproc_per_node=${GPUS_PER_NODE} \
                     --node_rank=${RANK} \
                     --master_addr=${MASTER_ENDPOINT} \
-                    --master_port=${MASTER_PORT}
+                    --master_port=${MASTER_PORT} \
                     --rdzv_id=1 \
                     --rdzv_backend=c10d"
 else
