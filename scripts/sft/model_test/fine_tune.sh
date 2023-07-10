@@ -15,7 +15,7 @@ model_type='roberta'
 seeds='42 123 1768'
 lrs='5e-4 1e-4 5e-5 1e-5'
 
-models='checkpoint-392500.pt'
+models='checkpoint-413500.pt'
 
 for dataset_name in ${datasets_name}; do {
     for model in ${models}; do {
