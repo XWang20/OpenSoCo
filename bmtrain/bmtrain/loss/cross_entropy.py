@@ -209,5 +209,5 @@ class FusedCrossEntropy(torch.nn.Module):
         elif self.reduction == "mean":
             import bmtrain as bmt
             tmp = ret.sum() / w.sum().float()
-            bmt.print(f"{bmt.rank()}")
+            bmt.print_rank(f"{bmt.rank()}")
             return tmp
