@@ -9,7 +9,7 @@ pip install model_center==0.1.3
 
 ls -l -ch /data
 
-GPUS_PER_NODE=4
+GPUS_PER_NODE=8
 
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
