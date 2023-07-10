@@ -34,19 +34,19 @@ def get_model(args):
     # make checkpoint dir
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
 
-    # if (args.load != None) and (args.start_step == 0):
-    #     bmp.print_rank(f"Loading from checkpoint {args.load}...")
-    #     bmp.load(model, args.load)
-    # else:
-    #     bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
-    #     ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
-    #     bmp.load(model, ckpt_path)
+    if (args.load != None) and (args.start_step == 0):
+        bmp.print_rank(f"Loading from checkpoint {args.load}...")
+        bmp.load(model, args.load)
+    else:
+        bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
+        ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
+        bmp.load(model, ckpt_path)
 
-    # for name, param in model.named_parameters():
-    #     if torch.isnan(param).sum() > 0:
-    #         bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
-    #         exit(0)
-    bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
+    for name, param in model.named_parameters():
+        if torch.isnan(param).sum() > 0:
+            bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
+            exit(0)
+    # bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
     
     model = model.to(torch.bfloat16)
     return model
@@ -273,18 +273,18 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         bmp.print_rank("start init tensorboard")
 
         # report training log to or tensorboard
-        # if bmp.rank() == 0:
-        #     # 获取当前时间并格式化为字符串  
-        #     now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        if bmp.rank() == 0:
+            # 获取当前时间并格式化为字符串  
+            now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-        #     # 创建目录  
-        #     tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
-        #     os.makedirs(tensorboard_dir)
-        #     bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
+            # 创建目录  
+            tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
+            os.makedirs(tensorboard_dir)
+            bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
 
-        #     writer = SummaryWriter(tensorboard_dir)
-        # else:
-        writer = None
+            writer = SummaryWriter(tensorboard_dir)
+        else:
+            writer = None
     
     # evaluate model before training
     valid(args, model, dev_dataloader, start_step, writer)
@@ -395,7 +395,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 392500
+    args.start_step = 413000
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
