@@ -190,7 +190,7 @@ def valid(args, model, dev_dataloader, step, writer):
     with torch.no_grad():
         for step, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
-            input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
+            input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.long().cuda()
             print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
