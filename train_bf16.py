@@ -288,7 +288,7 @@ def pretrain(args, model, optimizer, lr_scheduler, train_dataset, dev_dataloader
             writer = None
     
     # evaluate model before training
-    valid(args, model, dev_dataloader, start_step, writer)
+    # valid(args, model, dev_dataloader, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
