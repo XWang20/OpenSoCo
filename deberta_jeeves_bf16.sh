@@ -1,4 +1,3 @@
-#! /bin/bash
 
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
