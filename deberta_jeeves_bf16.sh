@@ -17,7 +17,7 @@ if [ ${IDC} == klara-2-pek02 ]; then
                     --node_rank=${RANK} \
                     --rdzv_id=1 \
                     --rdzv_backend=c10d \
-                    --rdzv_endpoint=${MASTER_ENDPOINT}:${MASTER_PORT}"
+                    --rdzv_endpoint=localhost"
 else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
