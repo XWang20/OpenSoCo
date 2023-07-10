@@ -186,7 +186,7 @@ def get_valid_dataset(dataset_path):
 
 def valid(args, model, dev_dataloader, step, writer):
     # loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100, reduction="mean")
 
     bmp.print_rank("start valid! ")
     model.eval()
@@ -267,7 +267,8 @@ def scale_down_model(scale, model, args):
     return model
 
 def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset, dev_dataloader):
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
+    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100, reduction="mean")
 
     start_step = args.start_step
     log_loss = 0
