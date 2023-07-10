@@ -155,8 +155,7 @@ def setup_model_and_optimizer(args):
 
 def get_train_dataset(args):
     bmp.print_rank(f"load dataset from path {args.input_dataset}")
-    # wait_time=10*bmp.rank()
-    # time.sleep(wait_time)
+
     print(bmp.rank(), bmp.world_size())
     
     input_ids_dataset = DistributedMMapIndexedDataset(args.input_dataset, 'input_ids', bmp.rank(), bmp.world_size())
@@ -192,6 +191,8 @@ def valid(args, model, dev_dataloader, step, writer):
             print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
+            wait_time=0.01*bmp.rank()
+            time.sleep(wait_time)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             print(f"rank: {bmp.rank()} | step: {valid_step} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
