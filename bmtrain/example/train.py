@@ -69,6 +69,34 @@ def main():
     avg_time_recorder = bmt.utils.AverageRecorder()
     avg_loss_recorder = bmt.utils.AverageRecorder()
 
+    with torch.no_grad():
+        pos = torch.arange(enc_input.size(1)).long().cuda().repeat(enc_input.size(0), 1)
+        logits = model(
+                enc_input,
+                pos,
+                pos < enc_length[:, None]
+            )
+        loss = loss_func(logits.view(batch * seq_len, vocab_out_size), targets.view(batch * seq_len))
+        global_loss = bmt.sum_loss(loss).item()
+        
+        # record time and loss
+        iteration_time = time.time() - st
+
+        avg_time_recorder.record(iteration_time)
+        avg_loss_recorder.record(global_loss)
+
+        # print time and loss
+        bmt.print_rank(
+            "| Iter: {:6d} | loss: {:.4f} average_loss: {:.4f} | lr: {:.4e} scale: {:10.4f} | time: {:.4f}".format(
+                iteration,
+                global_loss,
+                avg_loss_recorder.value,
+                lr_scheduler.current_lr,
+                optim_manager.loss_scale,
+                avg_time_recorder.value
+            )
+        )
+        
     for iteration in range(1000):
         # load data
         st = time.time()
