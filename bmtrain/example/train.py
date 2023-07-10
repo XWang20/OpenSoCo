@@ -91,8 +91,7 @@ def main():
 
         # print time and loss
         bmt.print_rank(
-            "| Iter: {:6d} | loss: {:.4f} average_loss: {:.4f} | time: {:.4f}".format(
-                iteration,
+            "valid: loss: {:.4f} average_loss: {:.4f} | time: {:.4f}".format(
                 global_loss,
                 avg_loss_recorder.value,
                 avg_time_recorder.value
