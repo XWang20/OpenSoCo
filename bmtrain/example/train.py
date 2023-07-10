@@ -50,8 +50,13 @@ def main():
         if i == bmt.rank():
             break
     
-    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    # loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
+    loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
     optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=1e-2)
+    optimizer = torch.optim.Adam(model.parameters(),
+                                 weight_decay=1e-2)
+
+    # optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=1e-2)
     lr_scheduler = bmt.lr_scheduler.Noam(optimizer, start_lr=1e-3, warmup_iter=40, end_iter=1000, num_iter=0)
 
     optim_manager = bmt.optim.OptimManager(loss_scale=2**20)
