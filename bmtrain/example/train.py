@@ -18,11 +18,13 @@ def main():
         dim_ff=8192,
         max_distance=1024,
         bias=True,
-        dtype=torch.half
+        dtype=torch.bfloat16
     )
 
+    
     bmt.init_parameters(model)
     # print_inspect(model, "*")
+    model = model.to(torch.bfloat16)
 
     bmt.print_rank("Model memory")
     bmt.print_rank(torch.cuda.memory_summary())
