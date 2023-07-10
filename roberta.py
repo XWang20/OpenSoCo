@@ -18,7 +18,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, List
 from model_center.layer import Encoder, Embedding, Linear, LayerNorm
-from model_center.basemodel import BaseModel, BaseModelOutputWithPooling
+from model_center.model import BaseModel, BaseModelOutputWithPooling
 from model_center.config import RobertaConfig
 
 
