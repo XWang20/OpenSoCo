@@ -191,6 +191,9 @@ class FusedCrossEntropy(torch.nn.Module):
         else:
             ret = OpFusedCrossEntropy.apply(input, target.int(), self.ignore_index) # return float tensor
 
+        import bmtrain as bmt
+        print(f"ret: {ret.size()} | {bmt.rank()}")
+
         if self.weight is not None:
             if self.weight.dim() != 1 or self.weight.size(0) != input.size(1):
                 raise ValueError("weight should be a 1D tensor of size C");
@@ -198,12 +201,16 @@ class FusedCrossEntropy(torch.nn.Module):
             w[target==self.ignore_index] = 0
         else:
             w = (target != self.ignore_index).int()
+        print(f"w: {w.size()} | {bmt.rank()}")
 
         ret = w * ret
-        
+
+        print(f"ret: {ret.size()} | {bmt.rank()}")
+
         if self.reduction == "none":
             return ret
         elif self.reduction == "sum":
             return ret.sum()
         elif self.reduction == "mean":
+            print(f"reduction: {self.reduction} | {bmt.rank()}")
             return ret.sum() / w.sum().float()
