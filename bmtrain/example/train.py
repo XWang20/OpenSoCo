@@ -76,6 +76,8 @@ def main():
                 pos,
                 pos < enc_length[:, None]
             )
+        batch, seq_len, vocab_out_size = logits.size()
+
         loss = loss_func(logits.view(batch * seq_len, vocab_out_size), targets.view(batch * seq_len))
         global_loss = bmt.sum_loss(loss).item()
         
@@ -87,11 +89,10 @@ def main():
 
         # print time and loss
         bmt.print_rank(
-            "| Iter: {:6d} | loss: {:.4f} average_loss: {:.4f} | lr: {:.4e} scale: {:10.4f} | time: {:.4f}".format(
+            "| Iter: {:6d} | loss: {:.4f} average_loss: {:.4f} | time: {:.4f}".format(
                 iteration,
                 global_loss,
                 avg_loss_recorder.value,
-                lr_scheduler.current_lr,
                 optim_manager.loss_scale,
                 avg_time_recorder.value
             )
