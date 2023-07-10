@@ -380,15 +380,15 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 if check_model_param(model):
                     bmp.print_rank("reload last ckpt model.")
                     model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                else:
-                    # get optimizer
-                    states = optimizer.state_dict()
-                    del states['state']
-                    optimizer_state = optimizer.state_dict()
-                    optimizer_state.update(states)
-                    optimizer.load_state_dict(optimizer_state)
-                    bmp.synchronize()
-                    optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+                # else:
+                #     # get optimizer
+                #     states = optimizer.state_dict()
+                #     del states['state']
+                #     optimizer_state = optimizer.state_dict()
+                #     optimizer_state.update(states)
+                #     optimizer.load_state_dict(optimizer_state)
+                #     bmp.synchronize()
+                #     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
 
             # # if inspect nan loss, scale down the model
             # if skip_step > 2 and torch.isnan(grad_norm):
@@ -478,7 +478,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 410000
+    args.start_step = 413500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
