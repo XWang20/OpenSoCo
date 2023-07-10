@@ -1,7 +1,5 @@
 #! /bin/bash
 
-
-rm -rf /data/tensorboards/413500/*
 pip install -v -e ./bmtrain
 
 export NCCL_P2P_DISABLE=1
@@ -63,7 +61,7 @@ OPTS+=" --save-iters 500"
 OPTS+=" --log-iters 2"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
-OPTS+=" --report_to none"
+OPTS+=" --report_to tensorboard"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
 echo ${CMD}
