@@ -193,8 +193,6 @@ def valid(args, model, dev_dataloader, step, writer):
             print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
-            wait_time=0.01*bmp.rank()
-            time.sleep(wait_time)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             print(f"rank: {bmp.rank()} | step: {valid_step} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()

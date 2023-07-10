@@ -1,5 +1,7 @@
 #! /bin/bash
 
+
+rm -rf /data/tensorboards/413500/*
 pip install -v -e ./bmtrain
 
 export NCCL_P2P_DISABLE=1
