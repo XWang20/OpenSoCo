@@ -181,7 +181,7 @@ def get_valid_dataset(dataset_path):
 
     return bert_dataset
 
-def valid(args, model, dev_dataloader, step, writer):
+def valid(args, model, dev_dataloader, loss_func, step, writer):
     bmp.print_rank("start valid! ")
     model.eval()
     valid_loss = 0
@@ -284,7 +284,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             writer = None
     
     # evaluate model before training
-    valid(args, model, dev_dataloader, start_step, writer)
+    valid(args, model, dev_dataloader, loss_func, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
@@ -329,7 +329,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             log_loss = 0
 
         if (start_step + step + 1) % args.valid_iters == 0:
-            valid(args, model, dev_dataloader, start_step + step + 1, writer)
+            valid(args, model, dev_dataloader, loss_func, start_step + step + 1, writer)
 
         if args.save != None and (step + start_step + 1) % args.save_iters == 0:
 
@@ -391,7 +391,7 @@ def main():
     # if last_step > args.start_step:
     #     args.start_step = last_step
 
-    args.start_step = 407000
+    args.start_step = 413500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
