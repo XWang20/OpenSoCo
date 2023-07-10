@@ -193,7 +193,7 @@ def valid(args, model, dev_dataloader, step, writer):
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
             print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
-            print(f"valid logits size: {logits.size()} | rank: {bmp.rank()}")
+            print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             print(f"rank: {bmp.rank()} | step: {step} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
@@ -288,7 +288,7 @@ def pretrain(args, model, optimizer, lr_scheduler, train_dataset, dev_dataloader
             writer = None
     
     # evaluate model before training
-    # valid(args, model, dev_dataloader, start_step, writer)
+    valid(args, model, dev_dataloader, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
         if (start_step + step + 1) % args.gradient_accumulate == 1:
