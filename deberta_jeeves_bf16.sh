@@ -3,13 +3,11 @@
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
 
-# pip install -v -e ./bmtrain
-
 pip install model_center==0.1.3
 
 ls -l -ch /data
 
-GPUS_PER_NODE=8
+GPUS_PER_NODE=4
 
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
@@ -59,7 +57,6 @@ OPTS+=" --log-iters 2"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
-
 
 CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
 echo ${CMD}
