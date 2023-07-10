@@ -46,7 +46,9 @@ def get_model(args):
         if torch.isnan(param).sum() > 0:
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
             exit(0)
-    # bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
+    # # bmp.load(model, "/mnt/data/user/tc_agi/user/wangxing/checkpoint-348500.pt")
+    # checkpoint_file_path = os.getenv("CHECKPOINT")
+
     
     model = model.to(torch.bfloat16)
     return model
