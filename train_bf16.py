@@ -1,8 +1,8 @@
 import torch,os
 import bmtrain as bmp
-# from roberta import Roberta
+from roberta import Roberta
 
-from model_center.model import RobertaConfig, Roberta
+from model_center.model import RobertaConfig
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
 
 from dataset import BertDataset
