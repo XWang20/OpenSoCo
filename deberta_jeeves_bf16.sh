@@ -2,6 +2,8 @@
 
 export NCCL_P2P_DISABLE=1
 
+pip install -v -e ./bmtrain
+
 pip install model_center==0.1.3
 
 ls -l -ch /data
