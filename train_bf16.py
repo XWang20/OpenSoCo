@@ -272,18 +272,18 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         bmp.print_rank("start init tensorboard")
 
         # report training log to or tensorboard
-        if bmp.rank() == 0:
-            # 获取当前时间并格式化为字符串  
-            now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
+        # if bmp.rank() == 0:
+        #     # 获取当前时间并格式化为字符串  
+        #     now = datetime.datetime.now().strftime('%Y%m%d%H%M%S')
 
-            # 创建目录  
-            tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
-            os.makedirs(tensorboard_dir)
-            bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
+        #     # 创建目录  
+        #     tensorboard_dir = os.path.join(args.save, 'tensorboard', str(args.start_step), now)
+        #     os.makedirs(tensorboard_dir)
+        #     bmp.print_rank("init tensorboard_dir: ", tensorboard_dir)
 
-            writer = SummaryWriter(tensorboard_dir)
-        else:
-            writer = None
+        #     writer = SummaryWriter(tensorboard_dir)
+        # else:
+        writer = None
     
     # evaluate model before training
     # valid(args, model, dev_dataloader, start_step, writer)
