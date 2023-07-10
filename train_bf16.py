@@ -36,14 +36,15 @@ def get_model(args):
     # make checkpoint dir
     os.makedirs(os.path.join(args.save, 'checkpoints'), exist_ok=True)
 
-    if (args.load != None) and (args.start_step == 0):
-        bmp.print_rank(f"Loading from checkpoint {args.load}...")
-        bmp.load(model, args.load)
-    else:
-        bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
-        ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
-        bmp.load(model, ckpt_path)
+    # if (args.load != None) and (args.start_step == 0):
+    #     bmp.print_rank(f"Loading from checkpoint {args.load}...")
+    #     bmp.load(model, args.load)
+    # else:
+    #     bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
+    #     ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
+    #     bmp.load(model, ckpt_path)
 
+    bmp.load(model, "/mnt/models/user/luca_model/klara/models/wx_lm/v20230710/train-model/checkpoint-413500.pt")
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:
             bmp.print_rank(f"NaN values found in parameter {name}. Aborting training.")
