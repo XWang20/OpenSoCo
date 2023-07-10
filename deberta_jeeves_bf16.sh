@@ -3,7 +3,7 @@
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
 
-pip install -v -e ./bmtrain
+# pip install -v -e ./bmtrain
 
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
