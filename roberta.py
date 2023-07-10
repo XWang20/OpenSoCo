@@ -48,8 +48,7 @@ class RoertaLMHead(torch.nn.Module):
 
         return logits
 
-import bmtrain as bmt
-class Roberta(bmt.DistributedModule):
+class Roberta(BaseModel):
 
     _CONFIG_TYPE = RobertaConfig
 
