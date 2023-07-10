@@ -61,7 +61,7 @@ OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
 
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
 echo ${CMD}
 
 mkdir -p ${SAVE_PATH}/logs/train/
