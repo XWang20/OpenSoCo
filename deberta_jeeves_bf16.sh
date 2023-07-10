@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # export NCCL_P2P_DISABLE=1
-export CUDA_LAUNCH_BLOCKING=1
+# export CUDA_LAUNCH_BLOCKING=1
 
 pip install model_center==0.1.3
 
@@ -14,9 +14,7 @@ if [ ${IDC} == klara-2-pek02 ]; then
                     --nproc_per_node=${GPUS_PER_NODE} \
                     --node_rank=${RANK} \
                     --master_addr=${MASTER_ENDPOINT} \
-                    --master_port=${MASTER_PORT} \
-                    --rdzv_id=1 \
-                    --rdzv_backend=c10d"
+                    --master_port=${MASTER_PORT}"
 else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
