@@ -63,7 +63,7 @@ OPTS+=" --save-iters 500"
 OPTS+=" --log-iters 2"
 OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
-OPTS+=" --report_to tensorboard"
+# OPTS+=" --report_to none"
 
 CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
 echo ${CMD}
