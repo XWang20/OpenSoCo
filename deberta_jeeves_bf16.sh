@@ -14,10 +14,10 @@ GPUS_PER_NODE=8
 if [ ${IDC} == klara-2-pek02 ]; then
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
-                    --node_rank=${RANK} \
+                    --master_addr=${MASTER_ENDPOINT} \
+                    --master_port=${MASTER_PORT}
                     --rdzv_id=1 \
-                    --rdzv_backend=c10d \
-                    --rdzv_endpoint=localhost"
+                    --rdzv_backend=c10d \"
 else
     DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
                     --nproc_per_node=${GPUS_PER_NODE} \
