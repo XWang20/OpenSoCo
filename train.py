@@ -37,7 +37,7 @@ def check_model_param(model):
 
 def get_model(args):
     config = RobertaConfig.from_json_file(args.model_config)
-    # config.dtype=torch.bfloat16
+    config.dtype=torch.float
     assert isinstance(config, RobertaConfig)
     model = Roberta(config)
 
@@ -56,7 +56,7 @@ def get_model(args):
     if check_model_param(model):
         bmp.print_rank("Aborting training. ")
         exit(0)
-    # model = model.to(torch.bfloat16)
+    model = model.to(torch.float)
     return model
 
 def reload_model(args, model, optimizer, lr_scheduler, step):
