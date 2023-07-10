@@ -8,8 +8,6 @@ import datetime
 from arguments import get_args
 from scale_model import scale_roberta_model
 
-from typing import Optional
-
 def get_file_path(root_dir):
     p = []
     for root, dirs, files in os.walk(root_dir):
