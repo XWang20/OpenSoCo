@@ -5,7 +5,7 @@ pip install -v -e ./bmtrain
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
 
-pip install model_center
+pip install model_center==0.2.1
 
 ls -l -ch /data
 
@@ -59,7 +59,7 @@ OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
 
-CMD="python3 -m torch.distributed.launch ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
+CMD="torchrun ${DISTRIBUTED_ARGS} ${BASE_PATH}/train_bf16.py ${OPTS}"
 echo ${CMD}
 
 mkdir -p ${SAVE_PATH}/logs/train/
