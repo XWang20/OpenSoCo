@@ -3,8 +3,8 @@
 pip install model_center==0.1.3
 ls /mnt/data/user/tc_agi/user/wangxing
 
-du -h /data
-ls -l -ch /data
+rm -rf /data/tensorboards/*
+du -h /data --max-depth=1
 
 GPUS_PER_NODE=8
 
