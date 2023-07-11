@@ -144,7 +144,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
                                                 lr = current_lr*scale_factor,
                                                 betas = (0.9, 0.95),
                                                 weight_decay=args.weight_decay,
-                                                eps=1e-6)
+                                                eps=1e-4)
 
     if args.lr_decay_iters is None:
         args.lr_decay_iters = args.train_iters * args.epochs
@@ -175,7 +175,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.5)
+    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.1)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
