@@ -38,7 +38,7 @@ OPTS+=" --test-dataset ${DATA_PATH}/valid/${TEST_DATASET}/"
 OPTS+=" --load-path ${DATA_PATH}/save/${CONFIG}_${DATASET_NAME}/1e-4-init-embed"
 OPTS+=" --save ${SAVE_PATH}"
 
-OPTS+=" --load ${DATA_PATH}/deberta-bmtrain.pt"
+OPTS+=" --load ${DATA_PATH}/init-deberta-bmtrain.pt"
 OPTS+=" --warmup-iters 10000"
 OPTS+=" --lr-decay-style linear"
 OPTS+=" --lr-decay-iters 1000000"
