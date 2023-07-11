@@ -88,30 +88,29 @@ def get_optimizer(args, model):
     # fp16
     optimizer = bmp.optim.AdamOffloadOptimizer(model.parameters(), 
                                                 lr = args.lr,
-                                                betas = (0.9, 0.95),
-                                                weight_decay=args.weight_decay)
+                                                betas = (0.9, 0.98),
+                                                weight_decay=args.weight_decay,
+                                                eps = 1e-6)
     
     if args.save is not None:
         bmp.print_rank("Loading the optimizer...")
         
-        # # if use the momentum, load optimizer
-        # states = torch.load(
-        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+        # if use the momentum, load optimizer
+        states = torch.load(
+            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # # if use the momentum, load the "state" in the optimizer state_dict
-        # optimizer.load_state_dict(states)
+        # if use the momentum, load the "state" in the optimizer state_dict
+        optimizer.load_state_dict(states)
         
         # if dont use the momentum, delete the "state" in the optimizer state_dict
         # states = torch.load(
-        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
-        states = torch.load(
-            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
+        #     os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
-        del states['state']
-        optimizer_state = optimizer.state_dict()
-        # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
-        optimizer_state.update(states)
-        optimizer.load_state_dict(optimizer_state)
+        # del states['state']
+        # optimizer_state = optimizer.state_dict()
+        # # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
+        # optimizer_state.update(states)
+        # optimizer.load_state_dict(optimizer_state)
 
         for name, param in optimizer.state_dict().items():
             if name == "param_groups":
@@ -249,7 +248,8 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 90000 - 357500) * args.batch_size
+    # st = (args.start_step + 90000 - 357500) * args.batch_size
+    st = args.start_step * args.batch_size
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
@@ -332,35 +332,37 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         # step optimizer
         if (start_step + step + 1) % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
-            if skip_step < 1 and torch.isnan(grad_norm):
+            optim_manager.step()
+            # skip_step = 0
+            # if skip_step < 1 and torch.isnan(grad_norm):
             # if torch.isnan(grad_norm):
                 # if nan grad norm inspected, skip the current step
-                bmp.print_rank(f"Nan grad norm.")
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
-                tokenizer = get_tokenizer()
-                # print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
-                #       labels: {data['labels']}''')
+            #     bmp.print_rank(f"Nan grad norm.")
+            #     skip_step += 1
+            #     optim_manager.zero_grad()
+            #     bmp.print_rank(f"Nan grad norm. Skip the current step. Total skip step: {skip_step}")
+            #     tokenizer = get_tokenizer()
+            #     # print(f'''text: {tokenizer.batch_decode(data['input_ids'])}\n
+            #     #       labels: {data['labels']}''')
 
-                if args.report_to == "wandb" and bmp.rank() == 0:
-                    wandb.alert(
-                        title="Nan loss inspected.",
-                        text=f'''inspected nan loss. skip the current step.\n
-                                step: {step+start_step+1}\n
-                                text: {tokenizer.batch_decode(data['input_ids'])}\n
-                                input_ids: {data['input_ids']}\n
-                                attention_mask: {data['attention_mask']}\n
-                                labels: {data['labels']}\n''',
-                        level=wandb.AlertLevel.WARN
-                    )
-            elif skip_step < 1 and grad_norm > 1.0 and not torch.isinf(grad_norm):
-                skip_step += 1
-                optim_manager.zero_grad()
-                bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
-            else:
-                optim_manager.step()
-                skip_step = 0
+            #     if args.report_to == "wandb" and bmp.rank() == 0:
+            #         wandb.alert(
+            #             title="Nan loss inspected.",
+            #             text=f'''inspected nan loss. skip the current step.\n
+            #                     step: {step+start_step+1}\n
+            #                     text: {tokenizer.batch_decode(data['input_ids'])}\n
+            #                     input_ids: {data['input_ids']}\n
+            #                     attention_mask: {data['attention_mask']}\n
+            #                     labels: {data['labels']}\n''',
+            #             level=wandb.AlertLevel.WARN
+            #         )
+            # elif skip_step < 1 and grad_norm > 1.0 and not torch.isinf(grad_norm):
+            #     skip_step += 1
+            #     optim_manager.zero_grad()
+            #     bmp.print_rank(f"Grad Norm: {grad_norm}. Grad norm > 1.0. Skip the current step. Total skip step: {skip_step}")
+            # else:
+            #     optim_manager.step()
+            #     skip_step = 0
 
             # update the training state to the integrations
             if bmp.rank() == 0:
@@ -375,31 +377,31 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                     writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
                     writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
 
-            if skip_step > 0:
-                # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                if check_model_param(model):
-                    bmp.print_rank("reload last ckpt model.")
-                    model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
-                # else:
-                #     # get optimizer
-                #     states = optimizer.state_dict()
-                #     del states['state']
-                #     optimizer_state = optimizer.state_dict()
-                #     optimizer_state.update(states)
-                #     optimizer.load_state_dict(optimizer_state)
-                #     bmp.synchronize()
-                #     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
+            # if skip_step > 0:
+            #     # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+            #     if check_model_param(model):
+            #         bmp.print_rank("reload last ckpt model.")
+            #         model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
+            #     # else:
+            #     #     # get optimizer
+            #     #     states = optimizer.state_dict()
+            #     #     del states['state']
+            #     #     optimizer_state = optimizer.state_dict()
+            #     #     optimizer_state.update(states)
+            #     #     optimizer.load_state_dict(optimizer_state)
+            #     #     bmp.synchronize()
+            #     #     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
 
-            # # if inspect nan loss, scale down the model
-            # if skip_step > 2 and torch.isnan(grad_norm):
-            #     model = scale_down_model(scale = 10.0, model = model, args = args)
+            # # # if inspect nan loss, scale down the model
+            # # if skip_step > 2 and torch.isnan(grad_norm):
+            # #     model = scale_down_model(scale = 10.0, model = model, args = args)
 
-            #     if args.report_to == "wandb" and bmp.rank() == 0:
-            #         wandb.alert(
-            #             title="Nan loss inspected.",
-            #             text="inspected nan loss. scale model by factor 10.",
-            #             level=wandb.AlertLevel.WARN
-            #         )
+            # #     if args.report_to == "wandb" and bmp.rank() == 0:
+            # #         wandb.alert(
+            # #             title="Nan loss inspected.",
+            # #             text="inspected nan loss. scale model by factor 10.",
+            # #             level=wandb.AlertLevel.WARN
+            # #         )
 
         # log the training state to console
         if (start_step + step + 1) % args.log_iters == 0:
@@ -473,12 +475,10 @@ def initialize():
 def main():
     args = initialize()
 
-    # # get last checkpoint step
-    # last_step = get_last_step(args, args.start_step)
-    # if last_step > args.start_step:
-    #     args.start_step = last_step
-
-    args.start_step = 415500
+    # get last checkpoint step
+    last_step = get_last_step(args, args.start_step)
+    if last_step > args.start_step:
+        args.start_step = last_step
 
     # init wandb and tensorboard
     if args.report_to == "wandb":

@@ -31,8 +31,6 @@ def add_training_args(parser: argparse.ArgumentParser):
                        help='Output directory to save checkpoints to.')
     group.add_argument('--load-path', type=str, default=None,
                        help='ckpt and optim path')
-    group.add_argument('--hdfs-save', type=str, default=None,
-                       help='HDFS output directory to save checkpoints.')
     group.add_argument('--save-iters', type=int, default=1000,
                        help='number of iterations between saves')
     group.add_argument('--log-iters', type=int, default=100,
@@ -76,7 +74,7 @@ def add_training_args(parser: argparse.ArgumentParser):
                        help='local rank passed from distributed launcher')
 
     # training log 
-    group.add_argument('--report_to', type=str, default="wandb",
+    group.add_argument('--report_to', type=str, default="tensorboard",
                        help='The list of integrations to report the results and logs to. Supported platforms are "tensorboard" and "wandb". If set to None, no integrations will be used.')
 
     return parser
