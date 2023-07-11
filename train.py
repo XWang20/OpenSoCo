@@ -162,8 +162,7 @@ def lower_learning_rate(args, model, lr_scheduler, scale_factor):
     return optimizer, lr_scheduler
 
 def get_optim_manager(args, optimizer, lr_scheduler):
-    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale, loss_scale_steps=64)
-    # optim_manager = bmp.optim.OptimManager(loss_scale = None)
+    optim_manager = bmp.optim.OptimManager(loss_scale = args.loss_scale)
     optim_manager.add_optimizer(optimizer, lr_scheduler)
     return optim_manager
 
@@ -174,7 +173,7 @@ def setup_model_and_optimizer(args):
     # get the optimizer and lr_scheduler
     optimizer = get_optimizer(args, model)
     lr_scheduler = get_learning_rate_scheduler(args, optimizer)
-    optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.1)
+    # optimizer, lr_scheduler = lower_learning_rate(args, model, lr_scheduler, scale_factor=0.1)
     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
     bmp.synchronize()
     # get the memory usage
