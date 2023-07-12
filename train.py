@@ -92,29 +92,29 @@ def get_optimizer(args, model):
                                                 weight_decay=args.weight_decay,
                                                 eps = 1e-6)
     
-    # if args.save is not None:
-    #     bmp.print_rank("Loading the optimizer...")
+    if args.save is not None:
+        bmp.print_rank("Loading the optimizer...")
         
-    #     # if use the momentum, load optimizer
-    #     states = torch.load(
-    #         os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+        # if use the momentum, load optimizer
+        states = torch.load(
+            os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-    #     # if use the momentum, load the "state" in the optimizer state_dict
-    #     optimizer.load_state_dict(states)
+        # if use the momentum, load the "state" in the optimizer state_dict
+        optimizer.load_state_dict(states)
         
-    #     # if dont use the momentum, delete the "state" in the optimizer state_dict
-    #     # states = torch.load(
-    #     #     os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
+        # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
-    #     # del states['state']
-    #     # optimizer_state = optimizer.state_dict()
-    #     # # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
-    #     # optimizer_state.update(states)
-    #     # optimizer.load_state_dict(optimizer_state)
+        # del states['state']
+        # optimizer_state = optimizer.state_dict()
+        # # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
+        # optimizer_state.update(states)
+        # optimizer.load_state_dict(optimizer_state)
 
-    #     for name, param in optimizer.state_dict().items():
-    #         if name == "param_groups":
-    #             bmp.print_rank(name, param)
+        for name, param in optimizer.state_dict().items():
+            if name == "param_groups":
+                bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -291,7 +291,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100)
 
     start_step = args.start_step
-    skip_step = 0
+    avg_time_recorder = bmp.utils.AverageRecorder()
+    avg_loss_recorder = bmp.utils.AverageRecorder()
     log_loss = 0
     if args.report_to == "tensorboard":
         from torch.utils.tensorboard import SummaryWriter
@@ -316,7 +317,9 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
     valid(args, model, dev_dataloader, loss_func, start_step, writer)
 
     for step, data in enumerate(batch_iter(args, train_dataset)):
-        if (start_step + step + 1) % args.gradient_accumulate == 1:
+        global_step = step=step+start_step+1
+        st = time.time()
+        if global_step % args.gradient_accumulate == 1:
             optim_manager.zero_grad() # when not doing
         input_ids = data['input_ids'].cuda()
         attention_mask = data['attention_mask'].cuda()
@@ -329,7 +332,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         optim_manager.backward(loss)
 
         # step optimizer
-        if (start_step + step + 1) % args.gradient_accumulate == 0:
+        if global_step % args.gradient_accumulate == 0:
             grad_norm = optim_manager.clip_grad_norm(optimizer.param_groups, args.clip_grad, norm_type = 2)
             optim_manager.step()
             # skip_step = 0
@@ -365,16 +368,25 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
 
             # update the training state to the integrations
             if bmp.rank() == 0:
+                iteration_time = time.time() - st
+
+                avg_time_recorder.record(iteration_time)
+                avg_loss_recorder.record(global_loss)
+                
                 if args.report_to == "wandb":
                     wandb.log({"loss/train": global_loss, 
                             "grad_norm": grad_norm,
                             "loss_scale": optim_manager.loss_scale,
-                            "learning_rate": lr_scheduler.current_lr}, step=step+start_step+1)
+                            "average_time": avg_time_recorder.value, 
+                            "average_loss": avg_loss_recorder.value,
+                            "learning_rate": lr_scheduler.current_lr}, global_step)
                 elif args.report_to == "tensorboard":
-                    writer.add_scalar("loss/train", global_loss, step + start_step + 1)
-                    writer.add_scalar("grad_norm", grad_norm, step + start_step + 1)
-                    writer.add_scalar("loss_scale", optim_manager.loss_scale, step + start_step + 1)
-                    writer.add_scalar("learning_rate", lr_scheduler.current_lr, step + start_step + 1)
+                    writer.add_scalar("loss/train", global_loss, global_step)
+                    writer.add_scalar("loss/average_loss", avg_loss_recorder.value, global_step)
+                    writer.add_scalar("average_time", avg_time_recorder.value, global_step)
+                    writer.add_scalar("grad_norm", grad_norm, global_step)
+                    writer.add_scalar("loss_scale", optim_manager.loss_scale, global_step)
+                    writer.add_scalar("learning_rate", lr_scheduler.current_lr, global_step)
 
             # if skip_step > 0:
             #     # model, optim_manager = reload_model(args, model, optimizer, lr_scheduler, step)
@@ -403,26 +415,28 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             # #         )
 
         # log the training state to console
-        if (start_step + step + 1) % args.log_iters == 0:
+        if global_step % args.log_iters == 0:
             bmp.print_rank(
-                    "{} | Iter: {:6d} | loss: {:.4f} | lr: {:.4e}, scale: {:10.4f} | grad_norm: {:.4f}".format(
+                    "{} | Iter: {:6d} | loss: {:.4f}, average_loss: {:.4f} | lr: {:.4e}, scale: {:10.4f}, grad_norm: {:.4f} | average_time: {:.4f}".format(
                         time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
-                        step + 1 + start_step,
+                        global_step,
                         log_loss / args.log_iters,
+                        avg_loss_recorder.value,
                         lr_scheduler.current_lr,
                         optim_manager.loss_scale,
-                        grad_norm
+                        grad_norm,
+                        avg_time_recorder.value
                     )
                 )
             log_loss = 0
 
-        if (start_step + step + 1) % args.valid_iters == 0:
-            valid(args, model, dev_dataloader, loss_func, start_step + step + 1, writer)
+        if global_step % args.valid_iters == 0:
+            valid(args, model, dev_dataloader, loss_func, global_step, writer)
 
-        if args.save != None and (step + start_step + 1) % args.save_iters == 0:
+        if args.save != None and global_step % args.save_iters == 0:
 
             # save checkpoint
-            model_path = os.path.join(args.save, 'checkpoints', "checkpoint-%d.pt" % (step + start_step + 1))
+            model_path = os.path.join(args.save, 'checkpoints', "checkpoint-%d.pt" % global_step)
             bmp.save(model, os.path.join(args.save, model_path))
             
             # 但此处先写空文件
@@ -435,7 +449,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             optimizer_path = os.path.join("checkpoints", "checkpoint.rank-%d.opt" % (bmp.rank()))
             torch.save(optimizer.state_dict(), os.path.join(args.save, optimizer_path))
 
-            bmp.print_rank(f"Saving checkpoint at {(step + start_step + 1) } step.")
+            bmp.print_rank(f"Saving checkpoint at {global_step} step.")
 
 def init_wandb(args):
     # start a wandb run to track this script
@@ -474,10 +488,10 @@ def initialize():
 def main():
     args = initialize()
 
-    # # get last checkpoint step
-    # last_step = get_last_step(args, args.start_step)
-    # if last_step > args.start_step:
-    #     args.start_step = last_step
+    # get last checkpoint step
+    last_step = get_last_step(args, args.start_step)
+    if last_step > args.start_step:
+        args.start_step = last_step
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
