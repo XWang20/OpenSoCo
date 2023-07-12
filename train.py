@@ -218,7 +218,6 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-            # bmp.print_rank(f"step: {step} | batch_size: {input_ids.size()} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
 
