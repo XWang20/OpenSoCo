@@ -370,7 +370,8 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 iteration_time = time.time() - st
 
                 avg_time_recorder.record(iteration_time)
-                avg_loss_recorder.record(global_loss)
+                if not torch.isnan(global_loss):
+                    avg_loss_recorder.record(global_loss)
                 
                 if args.report_to == "wandb":
                     wandb.log({"loss/train": global_loss, 
