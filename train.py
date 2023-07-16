@@ -2,14 +2,12 @@ import torch,os
 import bmtrain as bmp
 from model_center.model import Roberta, RobertaConfig
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
-from model_center.utils import print_inspect
 from dataset import BertDataset
 import time
 import datetime 
 from arguments import get_args
 from scale_model import scale_roberta_model
-from tokenizer import get_tokenizer
-import os
+import math
 
 def get_file_path(root_dir):
     p = []
@@ -370,7 +368,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
                 iteration_time = time.time() - st
 
                 avg_time_recorder.record(iteration_time)
-                if not torch.isnan(global_loss):
+                if not math.isnan(global_loss):
                     avg_loss_recorder.record(global_loss)
                 
                 if args.report_to == "wandb":
