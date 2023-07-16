@@ -247,8 +247,8 @@ def batch_iter(args, dataset):
     # 英文模型
     # st = 0  # 从第一个数据开始训练
     # st = (args.start_step + 90000 - 357500) * args.batch_size
-    # st = 10000 * args.batch_size * 2 + args.start_step * args.batch_size
-    st = 0
+    st = 90000 * args.batch_size * 2 + args.start_step * args.batch_size
+    # st = 0
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
