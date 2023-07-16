@@ -1,6 +1,7 @@
 import torch,os
 import bmtrain as bmp
 from model_center.model import Roberta, RobertaConfig
+# from roberta import Roberta
 from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
 from dataset import BertDataset
 import time
@@ -490,7 +491,7 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 210000
+    args.start_step = 207500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":

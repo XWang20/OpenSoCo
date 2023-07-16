@@ -52,7 +52,7 @@ class Roberta(BaseModel):
 
     _CONFIG_TYPE = RobertaConfig
 
-    def __init__(self, config: RobertaConfig):
+    def __init__(self, config: RobertaConfig, alpha=0.1):
         super().__init__()
 
         self.input_embedding = Embedding(
@@ -64,6 +64,8 @@ class Roberta(BaseModel):
             init_mean=config.emb_init_mean,
             init_std=config.emb_init_std,
         )
+
+        self.input_embedding = self.input_embedding*alpha + self.input_embedding.detach()*(1-alpha)
 
         self.position_embedding = Embedding(
             vocab_size=config.position_size,
