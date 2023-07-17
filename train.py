@@ -98,17 +98,14 @@ def get_optimizer(args, model):
         states = torch.load(
             os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # if use the momentum, load the "state" in the optimizer state_dict
-        optimizer.load_state_dict(states)
+        # # if use the momentum, load the "state" in the optimizer state_dict
+        # optimizer.load_state_dict(states)
         
-        # # if dont use the momentum, delete the "state" in the optimizer state_dict
-        # # states = torch.load(
-        # #     os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
-
-        # del states['state']
-        # optimizer_state = optimizer.state_dict()
-        # optimizer_state.update(states)
-        # optimizer.load_state_dict(optimizer_state)
+        # if dont use the momentum, delete the "state" in the optimizer state_dict
+        del states['state']
+        optimizer_state = optimizer.state_dict()
+        optimizer_state.update(states)
+        optimizer.load_state_dict(optimizer_state)
 
         for name, param in optimizer.state_dict().items():
             if name == "param_groups":
@@ -245,7 +242,7 @@ def batch_iter(args, dataset):
     # 英文模型
     # st = 0  # 从第一个数据开始训练
     # st = (args.start_step + 90000 - 357500) * args.batch_size
-    st = 50000 * args.batch_size
+    st = (50000 + args.start_step - 207500) * args.batch_size
     # st = 0
     input_ids_list = []
     attention_mask_list = []
