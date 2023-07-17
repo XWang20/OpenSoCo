@@ -52,7 +52,7 @@ class Roberta(BaseModel):
 
     _CONFIG_TYPE = RobertaConfig
 
-    def __init__(self, config: RobertaConfig, alpha=0.1):
+    def __init__(self, config: RobertaConfig):
         super().__init__()
 
         self.input_embedding = Embedding(
@@ -64,8 +64,6 @@ class Roberta(BaseModel):
             init_mean=config.emb_init_mean,
             init_std=config.emb_init_std,
         )
-
-        self.input_embedding = self.input_embedding*alpha + self.input_embedding.detach()*(1-alpha)
 
         self.position_embedding = Embedding(
             vocab_size=config.position_size,
@@ -154,6 +152,7 @@ class Roberta(BaseModel):
                 output_hidden_states=None,  # unused
                 return_dict=True,
                 return_logits = False,
+                alpha=0.1,
                 ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
@@ -209,6 +208,8 @@ class Roberta(BaseModel):
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
+
+        hidden_states = hidden_states*alpha + hidden_states.detach()*(1-alpha)
 
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
         position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
