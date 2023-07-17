@@ -242,7 +242,7 @@ def batch_iter(args, dataset):
     # 英文模型
     # st = 0  # 从第一个数据开始训练
     # st = (args.start_step + 90000 - 357500) * args.batch_size
-    st = (50000 + args.start_step - 207500) * args.batch_size
+    st = (50000 + args.start_step - 210000) * args.batch_size
     # st = 0
     input_ids_list = []
     attention_mask_list = []
@@ -488,7 +488,7 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 235000
+    args.start_step = 232500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
