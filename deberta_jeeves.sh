@@ -48,7 +48,7 @@ OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 7e-5"
 OPTS+=" --save-iters 2500"
 OPTS+=" --log-iters 100"
-OPTS+=" --gradient-accumulate 1"
+OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
 
