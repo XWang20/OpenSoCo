@@ -209,12 +209,12 @@ class Roberta(BaseModel):
         else:
             hidden_states = inputs_embeds
 
-        hidden_states = hidden_states*alpha + hidden_states.detach()*(1-alpha)
-
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
         position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
+
+        hidden_states = hidden_states*alpha + hidden_states.detach()*(1-alpha)
 
         hidden_states = self.embed_dropout(hidden_states)
 
