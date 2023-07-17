@@ -215,7 +215,13 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             global_loss = bmp.sum_loss(loss).item()
-            valid_loss += global_loss
+            if not math.isnan(global_loss):
+                valid_loss += global_loss
+            else:
+                bmp.print("valid loss is nan")
+                if check_model_param(model):
+                    bmp.print_rank("Aborting training. ")
+                    exit(0)
 
         if bmp.rank() == 0:
             if args.report_to == "tensorboard":
@@ -409,6 +415,12 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             #             text="inspected nan loss. scale model by factor 10.",
             #             level=wandb.AlertLevel.WARN
             #         )
+            
+            if torch.isnan(grad_norm):
+                # check model param
+                if check_model_param(model):
+                    bmp.print_rank("Aborting training. ")
+                    exit(0)
 
         # log the training state to console
         if global_step % args.log_iters == 0:
