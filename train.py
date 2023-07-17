@@ -242,8 +242,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    # st = (args.start_step + 90000 - 357500) * args.batch_size
-    st = (50000 + args.start_step - 200000) * args.batch_size
+    st = 55000*256 + (args.start_step - 207500) * args.batch_size
     # st = 0
     input_ids_list = []
     attention_mask_list = []
@@ -489,7 +488,7 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 237500
+    args.start_step = 232500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
