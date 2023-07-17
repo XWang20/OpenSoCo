@@ -401,15 +401,15 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
             #     #     optim_manager = get_optim_manager(args, optimizer, lr_scheduler)
 
             # if inspect nan loss, scale down the model
-            if torch.isnan(grad_norm):
-                model = scale_down_model(scale = 10.0, model = model, args = args)
+            # if torch.isnan(grad_norm):
+            #     model = scale_down_model(scale = 10.0, model = model, args = args)
 
-                if args.report_to == "wandb" and bmp.rank() == 0:
-                    wandb.alert(
-                        title="Nan loss inspected.",
-                        text="inspected nan loss. scale model by factor 10.",
-                        level=wandb.AlertLevel.WARN
-                    )
+            #     if args.report_to == "wandb" and bmp.rank() == 0:
+            #         wandb.alert(
+            #             title="Nan loss inspected.",
+            #             text="inspected nan loss. scale model by factor 10.",
+            #             level=wandb.AlertLevel.WARN
+            #         )
 
         # log the training state to console
         if global_step % args.log_iters == 0:
