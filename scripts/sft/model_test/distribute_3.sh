@@ -23,7 +23,3 @@ export data_process_method='stance'
 export task='sentiment'
 export datasets_name='NewsMTSC'
 bash scripts/sft/model_test/fine_tune.sh
-
-export task='stance'
-export datasets_name='semeval2016task6a'
-bash scripts/sft/model_test/fine_tune.sh

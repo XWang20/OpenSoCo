@@ -4,13 +4,12 @@ pip install scikit-learn
 
 export data_process_method='single_label'
 
-export task='rumor'
-export datasets_name='mrf'
+export task='irony'
+export datasets_name='Sarcasm_Headlines'
 bash scripts/sft/model_test/fine_tune.sh
 
-export datasets_name='semeval2018task3'
-bash scripts/sft/model_test/fine_tune.sh
+export data_process_method='stance'
 
-export task='humor'
-export datasets_name='hahackathon'
+export task='stance'
+export datasets_name='semeval2016task6a'
 bash scripts/sft/model_test/fine_tune.sh
