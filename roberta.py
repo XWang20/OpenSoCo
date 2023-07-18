@@ -152,7 +152,7 @@ class Roberta(BaseModel):
                 output_hidden_states=None,  # unused
                 return_dict=True,
                 return_logits = False,
-                alpha=0.1,
+                alpha=0.05,
                 ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
