@@ -281,7 +281,7 @@ if args.do_train:
     optimizer = bmt.optim.AdamOptimizer(model.parameters(),lr = args.learning_rate, weight_decay=1e-2, betas = (0.9, 0.999))
     bmt.synchronize()
 
-    lr_scheduler = bmt.lr_scheduler.Linear(optimizer, 
+    lr_scheduler = bmt.lr_scheduler.Cosine(optimizer, 
                                             start_lr = args.learning_rate,
                                             warmup_iter = warm_up_ratio*total_step,
                                             end_iter = total_step)

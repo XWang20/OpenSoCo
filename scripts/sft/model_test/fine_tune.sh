@@ -13,7 +13,7 @@ DISTRIBUTED_ARGS="--nnodes=${WORLD_SIZE} \
 base_path=./
 model_type='roberta'
 seeds='42 123 1768'
-lrs='5e-4 1e-4 5e-5 1e-5'
+lrs='1e-4 5e-5 1e-5 5e-6'
 
 models='checkpoint-255000.pt'
 
