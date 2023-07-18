@@ -99,14 +99,14 @@ def get_optimizer(args, model):
         states = torch.load(
             os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # # if use the momentum, load the "state" in the optimizer state_dict
-        # optimizer.load_state_dict(states)
+        # if use the momentum, load the "state" in the optimizer state_dict
+        optimizer.load_state_dict(states)
         
-        # if dont use the momentum, delete the "state" in the optimizer state_dict
-        del states['state']
-        optimizer_state = optimizer.state_dict()
-        optimizer_state.update(states)
-        optimizer.load_state_dict(optimizer_state)
+        # # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # del states['state']
+        # optimizer_state = optimizer.state_dict()
+        # optimizer_state.update(states)
+        # optimizer.load_state_dict(optimizer_state)
 
         for name, param in optimizer.state_dict().items():
             if name == "param_groups":
@@ -218,7 +218,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
             if not math.isnan(global_loss):
                 valid_loss += global_loss
             else:
-                bmp.print("valid loss is nan")
+                bmp.print_rank("valid loss is nan")
                 if check_model_param(model):
                     bmp.print_rank("Aborting training. ")
                     exit(0)
@@ -499,7 +499,7 @@ def main():
     last_step = get_last_step(args, args.start_step)
     if last_step > args.start_step:
         args.start_step = last_step
-    args.start_step = 237500
+    args.start_step = 252500
 
     # init wandb and tensorboard
     if args.report_to == "wandb":
