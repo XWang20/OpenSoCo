@@ -208,6 +208,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
     bmp.print_rank("start valid! ")
     model.eval()
     valid_loss = 0
+    valid_length = len(dev_dataloader)
     with torch.no_grad():
         for _, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
@@ -219,21 +220,22 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
                 valid_loss += global_loss
             else:
                 bmp.print_rank("valid loss is nan")
+                valid_length -= 1
                 if check_model_param(model):
                     bmp.print_rank("Aborting training. ")
                     exit(0)
 
         if bmp.rank() == 0:
             if args.report_to == "tensorboard":
-                writer.add_scalar("loss/dev", valid_loss/len(dev_dataloader), step)
+                writer.add_scalar("loss/dev", valid_loss/valid_length, step)
             elif args.report_to == "wandb":
-                wandb.log({"loss/dev": valid_loss/len(dev_dataloader)}, step=step)
+                wandb.log({"loss/dev": valid_loss/valid_length}, step=step)
 
         bmp.print_rank(
                         "{} | Iter: {:6d} | valid  loss: {:.4f}".format(
                             time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                             step,
-                            valid_loss / len(dev_dataloader)
+                            valid_loss / valid_length
                         )
                     )
     model.train()
@@ -248,7 +250,7 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = 55000*args.batch_size*2 + (207500-5500)*args.batch_size + (args.start_step-232500)*args.batch_size
+    st = 55000*args.batch_size*2 + (207500-5500)*args.batch_size + (args.start_step-232500)*args.batch_size + 100
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
