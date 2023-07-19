@@ -48,7 +48,7 @@ class RoertaLMHead(torch.nn.Module):
         logits = input_embedding.projection(hidden_states)
         print(f"rank: {bmp.rank()} | add bias")
         logits = input_embedding.projection(hidden_states) + self.decoder.bias
-
+        print(f"rank: {bmp.rank()} | start return logits")
         return logits
 
 class Roberta(BaseModel):
@@ -233,9 +233,11 @@ class Roberta(BaseModel):
         elif self.tied:
             print(f"rank: {bmp.rank()}, tied: {self.tied}")
             logits = self.lm_head(hidden_states, self.input_embedding)
+            print(f"rank: {bmp.rank()}, logits: {logits.size()}")
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
+        print(f"rank: {bmp.rank()}, start return")
         if return_logits:
             return logits
 
