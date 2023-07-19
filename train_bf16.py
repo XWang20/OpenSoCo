@@ -61,7 +61,7 @@ def get_optimizer(args, model):
     #                                             weight_decay=args.weight_decay)
 
     # bf16 can only use adam
-    optimizer = bmp.optim.Adam(model.parameters(), 
+    optimizer = bmp.optim.AdamOptimizer(model.parameters(), 
                                                 lr = args.lr,
                                                 betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
