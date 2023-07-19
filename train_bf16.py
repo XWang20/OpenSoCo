@@ -43,7 +43,7 @@ def get_model(args):
     else:
         bmp.print_rank(f"Loading from checkpoint-{args.start_step}.pt...")
         ckpt_path = os.path.join(args.save, "checkpoints", f"checkpoint-{args.start_step}.pt")
-        bmp.load(model, ckpt_path)
+        bmp.load(model, ckpt_path, strict=False)
 
     for name, param in model.named_parameters():
         if torch.isnan(param).sum() > 0:

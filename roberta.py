@@ -14,7 +14,7 @@
 # limitations under the License.
 import torch
 
-import bmtrain as bmp
+import bmtrain as bmt
 from src.layer import Encoder, Embedding, Linear, LayerNorm
 from src.model.basemodel import BaseModel
 from src.model.config import RobertaConfig
@@ -38,19 +38,23 @@ class RoertaLMHead(torch.nn.Module):
         self.dense = Linear(dim_model, dim_model, bias=True)
         self.act_fn = torch.nn.functional.gelu
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
-        self.decoder = Linear(dim_model, vocab_size, bias=True)
-
+        
+        self.bias = bmt.DistributedParameter(
+            torch.empty((vocab_size,)),
+            init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
+        )
+        
     def forward(self, hidden_states, input_embedding):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        print(f"rank: {bmp.rank()} | start projection")
+        print(f"rank: {bmt.rank()} | start projection")
         logits = input_embedding.projection(hidden_states)
-        print(f"rank: {bmp.rank()} | get bias")
-        bias = self.decoder.bias
-        print(f"rank: {bmp.rank()} | add bias")
+        print(f"rank: {bmt.rank()} | get bias")
+        bias = self.bias
+        print(f"rank: {bmt.rank()} | add bias")
         logits = logits + bias
-        print(f"rank: {bmp.rank()} | start return logits")
+        print(f"rank: {bmt.rank()} | start return logits")
         return logits
 
 class Roberta(BaseModel):
@@ -230,16 +234,16 @@ class Roberta(BaseModel):
             hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
-            print(f"rank: {bmp.rank()}, cls_head: {self.cls_head}")
+            print(f"rank: {bmt.rank()}, cls_head: {self.cls_head}")
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            print(f"rank: {bmp.rank()}, tied: {self.tied}")
+            print(f"rank: {bmt.rank()}, tied: {self.tied}")
             logits = self.lm_head(hidden_states, self.input_embedding)
-            print(f"rank: {bmp.rank()}, logits: {logits.size()}")
+            print(f"rank: {bmt.rank()}, logits: {logits.size()}")
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
-        print(f"rank: {bmp.rank()}, start return")
+        print(f"rank: {bmt.rank()}, start return")
         if return_logits:
             return logits
 
