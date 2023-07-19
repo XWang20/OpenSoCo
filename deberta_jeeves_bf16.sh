@@ -5,6 +5,7 @@ pip install -v -e ./bmtrain
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
 export NCCL_DEBUG=INFO
+export NCCL_SOCKET_IFNAME=ens160
 
 pip install model_center==0.1.3
 
