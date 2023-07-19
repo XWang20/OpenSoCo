@@ -11,8 +11,8 @@ def all_gather():
         global_size = round_up(shape, config['world_size'] * 2)
         partition_size = global_size // config['world_size']
 
-        partition_tensor = torch.empty( partition_size // 2, dtype=torch.bfloat16, device="cuda" )
-        global_tensor = torch.empty( global_size // 2, dtype=torch.bfloat16, device="cuda" )
+        partition_tensor = torch.empty( partition_size // 2, dtype=torch.half, device="cuda" )
+        global_tensor = torch.empty( global_size // 2, dtype=torch.half, device="cuda" )
         
         start_evt = torch.cuda.Event(enable_timing=True)
         end_evt = torch.cuda.Event(enable_timing=True)

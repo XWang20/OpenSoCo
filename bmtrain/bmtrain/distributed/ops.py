@@ -146,3 +146,6 @@ def all_reduce(x : torch.Tensor, op : str = "sum", comm = None):
 
     assert x.is_cuda
     return OpAllReduce.apply(x, op, comm)
+
+
+            

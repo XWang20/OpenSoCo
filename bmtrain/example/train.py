@@ -18,13 +18,11 @@ def main():
         dim_ff=8192,
         max_distance=1024,
         bias=True,
-        dtype=torch.bfloat16
+        dtype=torch.half
     )
 
-    
     bmt.init_parameters(model)
     # print_inspect(model, "*")
-    model = model.to(torch.bfloat16)
 
     bmt.print_rank("Model memory")
     bmt.print_rank(torch.cuda.memory_summary())
@@ -53,12 +51,7 @@ def main():
             break
     
     loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100)
-    # loss_func = bmt.loss.FusedCrossEntropy(ignore_index=-100)
     optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=1e-2)
-    optimizer = torch.optim.Adam(model.parameters(),
-                                 weight_decay=1e-2)
-
-    # optimizer = bmt.optim.AdamOffloadOptimizer(model.parameters(), weight_decay=1e-2)
     lr_scheduler = bmt.lr_scheduler.Noam(optimizer, start_lr=1e-3, warmup_iter=40, end_iter=1000, num_iter=0)
 
     optim_manager = bmt.optim.OptimManager(loss_scale=2**20)
@@ -69,35 +62,6 @@ def main():
     avg_time_recorder = bmt.utils.AverageRecorder()
     avg_loss_recorder = bmt.utils.AverageRecorder()
 
-    with torch.no_grad():
-        st = time.time()
-
-        pos = torch.arange(enc_input.size(1)).long().cuda().repeat(enc_input.size(0), 1)
-        logits = model(
-                enc_input,
-                pos,
-                pos < enc_length[:, None]
-            )
-        batch, seq_len, vocab_out_size = logits.size()
-
-        loss = loss_func(logits.view(batch * seq_len, vocab_out_size), targets.view(batch * seq_len))
-        global_loss = bmt.sum_loss(loss).item()
-        
-        # record time and loss
-        iteration_time = time.time() - st
-
-        avg_time_recorder.record(iteration_time)
-        avg_loss_recorder.record(global_loss)
-
-        # print time and loss
-        bmt.print_rank(
-            "valid: loss: {:.4f} average_loss: {:.4f} | time: {:.4f}".format(
-                global_loss,
-                avg_loss_recorder.value,
-                avg_time_recorder.value
-            )
-        )
-        
     for iteration in range(1000):
         # load data
         st = time.time()

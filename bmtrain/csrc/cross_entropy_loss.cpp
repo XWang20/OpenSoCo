@@ -22,9 +22,9 @@ void F_cross_entropy_forward(
     CHECK_INPUT(target);
     CHECK_INPUT(softmax);
     CHECK_INPUT(output);
-    AT_ASSERTM(input.dtype() == torch::kBFloat16, "input must be a half tensor");
+    AT_ASSERTM(input.dtype() == torch::kHalf, "input must be a half tensor");
     AT_ASSERTM(target.dtype() == torch::kInt, "target must be a int tensor");
-    AT_ASSERTM(softmax.dtype() == torch::kBFloat16, "softmax must be a half tensor");
+    AT_ASSERTM(softmax.dtype() == torch::kHalf, "softmax must be a half tensor");
     AT_ASSERTM(output.dtype() == torch::kFloat, "output must be a float tensor");
     AT_ASSERTM(input.numel() == softmax.numel(), "input and softmax must have the same number of elements");
     AT_ASSERTM(target.numel() == output.numel(), "target and output must have the same number of elements");
@@ -46,8 +46,8 @@ void F_cross_entropy_backward(
     CHECK_INPUT(grad_input);
     AT_ASSERTM(grad_output.dtype() == torch::kFloat, "grad_output must be a float tensor");
     AT_ASSERTM(target.dtype() == torch::kInt, "target must be a int tensor");
-    AT_ASSERTM(softmax.dtype() == torch::kBFloat16, "softmax must be a half tensor");
-    AT_ASSERTM(grad_input.dtype() == torch::kBFloat16, "grad_input must be a half tensor");
+    AT_ASSERTM(softmax.dtype() == torch::kHalf, "softmax must be a half tensor");
+    AT_ASSERTM(grad_input.dtype() == torch::kHalf, "grad_input must be a half tensor");
     AT_ASSERTM(grad_input.numel() == softmax.numel(), "grad_input and softmax must have the same number of elements");
     AT_ASSERTM(target.numel() == grad_output.numel(), "target and grad_output must have the same number of elements");
 
@@ -64,7 +64,7 @@ void F_cross_entropy_forward_inplace(
     CHECK_INPUT(x);
     CHECK_INPUT(target);
     CHECK_INPUT(output);
-    AT_ASSERTM(x.dtype() == torch::kBFloat16, "x must be a half tensor");
+    AT_ASSERTM(x.dtype() == torch::kHalf, "x must be a half tensor");
     AT_ASSERTM(target.dtype() == torch::kInt, "target must be a int tensor");
     AT_ASSERTM(output.dtype() == torch::kFloat, "output must be a float tensor");
     AT_ASSERTM(target.numel() == output.numel(), "target and output must have the same number of elements");
@@ -84,7 +84,7 @@ void F_cross_entropy_backward_inplace(
     CHECK_INPUT(x);
     AT_ASSERTM(grad_output.dtype() == torch::kFloat, "grad_output must be a float tensor");
     AT_ASSERTM(target.dtype() == torch::kInt, "target must be a int tensor");
-    AT_ASSERTM(x.dtype() == torch::kBFloat16, "x must be a half tensor");
+    AT_ASSERTM(x.dtype() == torch::kHalf, "x must be a half tensor");
     AT_ASSERTM(target.numel() == grad_output.numel(), "target and grad_output must have the same number of elements");
 
     cross_entropy_backward_inplace_launcher(m, n, grad_output, target, x, ignore_index);

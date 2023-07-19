@@ -9,8 +9,8 @@ def send_recv():
     for shape in SHAPES:
         send_size = shape
 
-        send_buffer = torch.empty( send_size // 2, dtype=torch.bfloat16, device="cuda" )
-        recv_buffer = torch.empty( send_size // 2, dtype=torch.bfloat16, device="cuda" )
+        send_buffer = torch.empty( send_size // 2, dtype=torch.half, device="cuda" )
+        recv_buffer = torch.empty( send_size // 2, dtype=torch.half, device="cuda" )
         
         start_evt = torch.cuda.Event(enable_timing=True)
         end_evt = torch.cuda.Event(enable_timing=True)

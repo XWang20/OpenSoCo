@@ -11,7 +11,7 @@ def check(x, v):
 
 def test_main():
     for i in list(range(1, 100)) + [1000]*10 + [10000]*10 + [100000]*10 + [1000000]*10:
-        x = torch.rand((i,)).to(torch.bfloat16).cuda()
+        x = torch.rand((i,)).half().cuda()
         check(x, 0)
         p = random.randint(0, i-1)
         x[p] = x[p] / 0

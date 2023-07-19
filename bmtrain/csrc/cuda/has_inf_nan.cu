@@ -1,9 +1,9 @@
-#include <cuda_bf16.h>
+#include <cuda_fp16.h>
 #include <torch/extension.h>
 #include <ATen/cuda/CUDAContext.h>
 
 namespace{
-__inline__ __device__ bool isnan_(nv_bfloat16 v) {
+__inline__ __device__ bool isnan_(half v) {
 #if __CUDA_ARCH__ >= 700 || __CUDA_ARCH__ == 600
     return __hisnan(v);
 #else
@@ -33,7 +33,7 @@ __inline__ __device__ float blockReduceAny(int8_t x) {
 // grid <min(ceil(n/1024), 1024)>,        thread<1024>
 __global__ void bmt_has_nan_inf_1(
     int32_t n,
-    const nv_bfloat16* inp,        // (n,) 
+    const half* inp,        // (n,) 
     uint8_t* mid            // (1024,)
 ) {
     int32_t gid = blockIdx.x * blockDim.x + threadIdx.x;
@@ -41,7 +41,7 @@ __global__ void bmt_has_nan_inf_1(
 
     int8_t r = 0;
     for (int i = gid; i < n; i += span) {
-        nv_bfloat16 v = inp[i];
+        half v = inp[i];
         if (__hisinf(v) || isnan_(v)) {
             r = 1;
             break;
@@ -74,7 +74,7 @@ void has_nan_inf_launcher(
 ) {
     int n = g_fp16.numel();
     if (n <= 0) return;
-    auto g_ptr = reinterpret_cast<nv_bfloat16*>(g_fp16.data_ptr<at::BFloat16>());
+    auto g_ptr = reinterpret_cast<half*>(g_fp16.data_ptr<at::Half>());
     auto mid_ptr = mid.data_ptr<uint8_t>();
     auto stream = at::cuda::getCurrentCUDAStream();
 

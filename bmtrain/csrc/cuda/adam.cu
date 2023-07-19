@@ -1,4 +1,5 @@
 #include <cuda_fp16.h>
+#include <cuda_bf16.h>
 #include <torch/extension.h>
 #include <ATen/cuda/CUDAContext.h>
 
@@ -34,6 +35,36 @@ __global__ void adam_fp32_accum(
         m[col] = __float2half(local_m);
     }
 }
+
+__global__ void adam_fp32_accum_bf16(
+    int32_t n,
+    const __nv_bfloat16 *g,        // (n)
+    float *m,        // (n)
+    float *v,        // (n)
+    float* param,   // (n)
+    __nv_bfloat16* param_h,  // (n)
+    float beta1,
+    float beta2,
+    float eps,
+    float lr,
+    float weight_decay,
+    float bias_correction1,
+    float bias_correction2
+) {
+    int32_t col = blockIdx.x * blockDim.x + threadIdx.x;
+    if (col < n) {
+        float local_g = __bfloat162float(g[col]);                                      
+        float local_m = beta1 * m[col] + (1 - beta1) * local_g;     
+        float local_v = beta2 * v[col] + (1 - beta2) * local_g * local_g;  
+        float local_p = param[col];
+        local_p = local_p - lr * local_m / bias_correction1 / (sqrtf(local_v / bias_correction2) + eps) - lr * weight_decay * local_p;
+
+        param_h[col] = __float2bfloat16(local_p);
+        param[col] = local_p;
+        v[col] = local_v;
+        m[col] = local_m;
+    }
+}
 }
 
 void adam_launcher(
@@ -61,4 +92,30 @@ void adam_launcher(
     dim3 grid_size = dim3((n + threads - 1) / threads, 1, 1);
     auto stream = at::cuda::getCurrentCUDAStream();
     adam_fp32_accum<<<grid_size, block_size, 0, stream.stream()>>>(n, g_ptr, m_ptr, v_ptr, param_ptr, param_h_ptr, beta1, beta2, eps, lr, scale, weight_decay, bias_correction1, bias_correction2);
+}
+
+void adam_launcher_bf16(
+    const torch::Tensor &param_fp32,
+    const torch::Tensor &param_bf16,
+    const torch::Tensor &g_bf16,
+    const torch::Tensor &m_fp32,
+    const torch::Tensor &v_fp32,
+    float beta1, float beta2,
+    float eps, float lr,
+    float weight_decay,
+    float bias_correction1,
+    float bias_correction2
+) {
+    int32_t n = param_fp32.numel();
+    if (n <= 0) return;
+    auto g_ptr = reinterpret_cast<__nv_bfloat16*>(g_bf16.data_ptr<at::BFloat16>());
+    auto m_ptr = m_fp32.data_ptr<float>();
+    auto v_ptr = v_fp32.data_ptr<float>();
+    auto param_ptr = param_fp32.data_ptr<float>();
+    auto param_h_ptr = reinterpret_cast<__nv_bfloat16*>(param_bf16.data_ptr<at::BFloat16>());
+    int32_t threads = 1024;
+    dim3 block_size = dim3(threads, 1, 1);
+    dim3 grid_size = dim3((n + threads - 1) / threads, 1, 1);
+    auto stream = at::cuda::getCurrentCUDAStream();
+    adam_fp32_accum_bf16<<<grid_size, block_size, 0, stream.stream()>>>(n, g_ptr, m_ptr, v_ptr, param_ptr, param_h_ptr, beta1, beta2, eps, lr, weight_decay, bias_correction1, bias_correction2);
 }

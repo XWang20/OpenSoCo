@@ -62,19 +62,22 @@ class AdamOptimizer(torch.optim.Optimizer):
                 if p.grad is not None and p.requires_grad:
                     if p.grad.is_sparse:
                         raise RuntimeError('Adam does not support sparse gradients, please consider SparseAdam instead')
-                    if p.dtype not in [torch.float16, torch.float32]:
-                        raise RuntimeError('Adam only supports fp32 or fp16 gradients')
+                    if p.dtype not in [torch.float16, torch.float32, torch.bfloat16]:
+                        raise RuntimeError('Adam only supports float16, float32 and bfloat16')
 
                     state = self.state[p]
                     # Lazy state initialization
                     if len(state) == 0:
                         state['step'] = 0
                         # Exponential moving average of gradient values
-                        state['exp_avg'] = torch.zeros(p.size(), dtype=p.dtype, device=p.device) # on device
+                        if p.dtype == torch.bfloat16: # BF16
+                            state['exp_avg'] = torch.zeros(p.size(), dtype=torch.float32, device=p.device) # on device
+                        else:
+                            state['exp_avg'] = torch.zeros(p.size(), dtype=p.dtype, device=p.device) # on device
                         # Exponential moving average of squared gradient values
                         state['exp_avg_sq'] = torch.zeros(p.size(), dtype=torch.float32, device=p.device)   # on device
 
-                        if p.dtype == torch.half:
+                        if p.dtype == torch.half or p.dtype == torch.bfloat16: #BF16
                             state['_param_fp32'] = torch.empty(p.size(), dtype=torch.float32, device=p.device)   # on device
                             state['_param_fp32'].copy_(p)
 
@@ -97,6 +100,19 @@ class AdamOptimizer(torch.optim.Optimizer):
                             group['eps'],
                             0.0 if state["step"] <= self._hold_steps else group['lr'],
                             scale,
+                            group['weight_decay'],
+                            state['step']
+                        )
+                    elif p.dtype == torch.bfloat16: # BF16
+                        C.f_adam_bf16(
+                            state["_param_fp32"],    # fp32
+                            p,                      # bf16
+                            grad,                 # bf16
+                            state['exp_avg'],       # fp32: m
+                            state["exp_avg_sq"],    # fp32: v
+                            group['betas'][0], group['betas'][1],
+                            group['eps'],
+                            0.0 if state["step"] <= self._hold_steps else group['lr'],
                             group['weight_decay'],
                             state['step']
                         )

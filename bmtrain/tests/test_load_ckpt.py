@@ -16,7 +16,7 @@ class Linear_Normal(torch.nn.Module):
             self.bias = torch.nn.Parameter(torch.empty(out_features, dtype=dtype, device="cuda"))
             torch.nn.init.zeros_(self.bias)
         else:
-            self.parameter('bias', None)
+            self.register_parameter('bias', None)
     
     def forward(self, input):
         return F.linear(input, self.weight, self.bias)
