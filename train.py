@@ -486,9 +486,9 @@ def initialize():
     args = get_args()
     # init bmp 
     bmp.print_rank("Init bmp distributed.")
-    # bmp.init_distributed(seed=args.seed, zero_level=3)
+    bmp.init_distributed(seed=args.seed, zero_level=3)
     
-    bmp.init_distributed(seed=args.seed)
+    # bmp.init_distributed(seed=args.seed)
 
     # init save folder
     if args.save != None:
