@@ -46,10 +46,10 @@ class RoertaLMHead(torch.nn.Module):
         hidden_states = self.layer_norm(hidden_states)
         print(f"rank: {bmp.rank()} | start projection")
         logits = input_embedding.projection(hidden_states)
-        # print(f"rank: {bmp.rank()} | get bias")
-        # bias = self.decoder.bias
-        # print(f"rank: {bmp.rank()} | add bias")
-        # logits = logits + bias
+        print(f"rank: {bmp.rank()} | get bias")
+        bias = self.decoder.bias
+        print(f"rank: {bmp.rank()} | add bias")
+        logits = logits + bias
         print(f"rank: {bmp.rank()} | start return logits")
         return logits
 
