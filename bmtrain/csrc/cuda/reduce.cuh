@@ -1,4 +1,5 @@
-#include <cuda_fp16.h>
+// #include <cuda_fp16.h>
+#include <cuda_bf16.h>
 #include <torch/extension.h>
 #include <ATen/cuda/CUDAContext.h>
 
