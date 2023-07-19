@@ -348,7 +348,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         # log the training state to console
         if global_step % args.log_iters == 0:
             bmp.print_rank(
-                    "{} | Iter: {:6d} | loss: {:.4f}, average_loss: {:.4f} | lr: {:.4e}, scale: {:10.4f}, grad_norm: {:.4f} | average_time: {:.4f}".format(
+                    "{} | Iter: {:6d} | loss: {:.4f}, average_loss: {:.4f} | lr: {:.4e}, grad_norm: {:.4f} | average_time: {:.4f}".format(
                         time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()),
                         global_step,
                         log_loss / args.log_iters,
