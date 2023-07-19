@@ -40,7 +40,7 @@ class RoertaLMHead(torch.nn.Module):
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         
         self.bias = bmt.DistributedParameter(
-            torch.empty((6277,)),
+            torch.empty((vocab_size,)),
             init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
         )
         
@@ -50,7 +50,7 @@ class RoertaLMHead(torch.nn.Module):
         hidden_states = self.layer_norm(hidden_states)
         print(f"rank: {bmt.rank()} | start projection")
         logits = input_embedding.projection(hidden_states)
-        print(f"rank: {bmt.rank()} | get bias")
+        print(f"rank: {bmt.rank()} | projection: {logits.size()}")
         bias = self.bias
         print(f"rank: {bmt.rank()} | add bias")
         logits = logits + bias
