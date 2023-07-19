@@ -1,8 +1,9 @@
 import torch,os
 import bmtrain as bmp
 
-from src.model import RobertaConfig
-from src.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
+from roberta import Roberta
+from model_center.model import RobertaConfig
+from model_center.dataset import MMapIndexedDataset, DistributedMMapIndexedDataset, DistributedDataLoader
 from roberta import Roberta
 
 from dataset import BertDataset
@@ -192,7 +193,7 @@ def valid(args, model, dev_dataloader, step, writer):
         for _, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
-            logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
+            logits = model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)["logits"]
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
@@ -294,7 +295,7 @@ def pretrain(args, model, optimizer, lr_scheduler, optim_manager, train_dataset,
         input_ids = data['input_ids'].cuda()
         attention_mask = data['attention_mask'].cuda()
         labels = data['labels'].cuda()
-        logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
+        logits = model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)["logits"]
         loss = loss_func(logits.view(-1, logits.size(-1)), labels.view(-1))
         global_loss = bmp.sum_loss(loss).item()
         log_loss += global_loss
