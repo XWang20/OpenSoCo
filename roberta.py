@@ -39,10 +39,12 @@ class RoertaLMHead(torch.nn.Module):
         self.act_fn = torch.nn.functional.gelu
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         
-        self.bias = bmt.DistributedParameter(
-            torch.empty((vocab_size,)),
-            init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
-        )
+        self.decoder = Linear(dim_model, vocab_size, bias=True, dtype=torch.bfloat16)
+
+        # self.bias = bmt.DistributedParameter(
+        #     torch.empty((vocab_size,)),
+        #     init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
+        # )
         
     def forward(self, hidden_states, input_embedding):
         hidden_states = self.dense(hidden_states)
@@ -51,7 +53,7 @@ class RoertaLMHead(torch.nn.Module):
         print(f"rank: {bmt.rank()} | start projection")
         logits = input_embedding.projection(hidden_states)
         print(f"rank: {bmt.rank()} | projection: {logits.size()}")
-        bias = self.bias
+        bias = self.decoder.bias
         print(f"rank: {bmt.rank()} | add bias")
         logits = logits + bias
         print(f"rank: {bmt.rank()} | start return logits")
