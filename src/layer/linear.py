@@ -43,7 +43,7 @@ class Linear(bmt.DistributedModule):
         super().__init__()
         self.dim_in = dim_in
         self.weight = bmt.DistributedParameter(
-            torch.empty((dim_out, dim_in), dtype=dtype), device="cuda",
+            torch.empty((dim_out, dim_in), dtype=dtype, device="cuda"), 
             init_method=torch.nn.init.normal_
         )
         if bias:
