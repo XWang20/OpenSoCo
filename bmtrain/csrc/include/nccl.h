@@ -130,12 +130,8 @@ typedef enum { ncclInt8       = 0, ncclChar       = 0,
                ncclFloat16    = 6, ncclHalf       = 6,
                ncclFloat32    = 7, ncclFloat      = 7,
                ncclFloat64    = 8, ncclDouble     = 8,
-#if defined(__CUDA_BF16_TYPES_EXIST__)
                ncclBfloat16   = 9,
                ncclNumTypes   = 10
-#else
-               ncclNumTypes   = 9
-#endif
 } ncclDataType_t;
 
 /* ncclScalarResidence_t: Location and dereferencing logic for scalar arguments. */
