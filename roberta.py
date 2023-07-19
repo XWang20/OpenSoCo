@@ -40,7 +40,7 @@ class RoertaLMHead(torch.nn.Module):
         self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
         
         self.bias = bmt.DistributedParameter(
-            torch.empty((50265,)),
+            torch.empty((6277,)),
             init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
         )
         
