@@ -1,6 +1,6 @@
 #! /bin/bash
 
-# pip install -v -e ./bmtrain
+pip install -v -e ./bmtrain
 
 export NCCL_P2P_DISABLE=1
 export CUDA_LAUNCH_BLOCKING=1
@@ -31,7 +31,6 @@ fi
 BASE_PATH="."
 DATA_PATH="/mnt/data/user/tc_agi/user/wangxing"
 SAVE_PATH="/data/"
-HDFS_PATH="/user/tc_agi/user/wangxing/save"
 DATASET_NAME="OpenSoCo_en"
 TEST_DATASET="OpenSoCo_en"
 CONFIG="deberta_prenorm"
