@@ -18,8 +18,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from typing import Optional, List
 from model_center.layer import Encoder, Embedding, Linear, LayerNorm
+from model_center.model import RobertaConfig
 from model_center.model.basemodel import BaseModel, BaseModelOutputWithPooling
-from model_center.config import RobertaConfig
 
 class RobertaPooler(nn.Module):
     def __init__(self, dim_model: int, dtype: torch.dtype):
