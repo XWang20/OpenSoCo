@@ -1,5 +1,22 @@
 #! /bin/bash
 
+rm -rf /data/tensorboard/413000/*
+rm -rf /data/tensorboard/413500/*
+rm -rf /data/tensorboard/397500/*
+rm -rf /data/tensorboard/400000/*
+rm -rf /data/tensorboard/402000/*
+rm -rf /data/tensorboard/412000/*
+rm -rf /data/tensorboard/412000/*
+rm -rf /data/tensorboard/403500/*
+rm -rf /data/tensorboard/415500/*
+rm -rf /data/tensorboard/392500/*
+rm -rf /data/tensorboard/395000/*
+rm -rf /data/tensorboard/382500/*
+rm -rf /data/tensorboard/380000/*
+rm -rf /data/tensorboard/414000/*
+rm -rf /data/tensorboard/352500/*
+rm -rf /data/tensorboard/395000/*
+
 pip install -v -e ./bmtrain
 
 export NCCL_P2P_DISABLE=1
