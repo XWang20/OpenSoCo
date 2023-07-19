@@ -168,7 +168,7 @@ def valid(args, model, dev_dataloader, loss_func, step, writer):
         for _, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
-            logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
+            logits = model(input_ids=input_ids, attention_mask=attention_mask, return_dict=True)["logits"]
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
             global_loss = bmp.sum_loss(loss).item()
             if not math.isnan(global_loss):
