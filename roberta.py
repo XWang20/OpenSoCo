@@ -41,13 +41,13 @@ class RoertaLMHead(torch.nn.Module):
         self.decoder = Linear(dim_model, vocab_size, bias=True)
 
     def forward(self, hidden_states, input_embedding):
-        print(f"rank: {bmp.get_rank()}, start dense")
+        print(f"rank: {bmp.rank()}, start dense")
         hidden_states = self.dense(hidden_states)
-        print(f"rank: {bmp.get_rank()} | start act_fn")
+        print(f"rank: {bmp.rank()} | start act_fn")
         hidden_states = self.act_fn(hidden_states)
-        print(f"rank: {bmp.get_rank()} | start layer_norm")
+        print(f"rank: {bmp.rank()} | start layer_norm")
         hidden_states = self.layer_norm(hidden_states)
-        print(f"rank: {bmp.get_rank()} | start projection")
+        print(f"rank: {bmp.rank()} | start projection")
         # logits = self.decoder(hidden_states)
         logits = input_embedding.projection(hidden_states) + self.decoder.bias
 
