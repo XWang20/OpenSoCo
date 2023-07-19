@@ -177,8 +177,8 @@ def get_valid_dataset(dataset_path):
     return bert_dataset
 
 def valid(args, model, dev_dataloader, step, writer):
-    # loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100, reduction="mean")
-    loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100, reduction="mean")
+    loss_func = torch.nn.CrossEntropyLoss(ignore_index=-100, reduction="mean")
+    # loss_func = bmp.loss.FusedCrossEntropy(ignore_index=-100, reduction="mean")
 
     bmp.print_rank("start valid! ")
     model.eval()
