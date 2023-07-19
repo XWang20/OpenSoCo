@@ -14,10 +14,9 @@
 # limitations under the License.
 import torch
 
-import bmtrain as bmp
-from src.layer import Encoder, Embedding, Linear, LayerNorm
-from src.model.basemodel import BaseModel
-from src.model.config import RobertaConfig
+from ..layer import Encoder, Embedding, Linear, LayerNorm
+from .basemodel import BaseModel
+from .config import RobertaConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
 class RoertaPooler(torch.nn.Module):
@@ -44,14 +43,11 @@ class RoertaLMHead(torch.nn.Module):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        print(f"rank: {bmp.rank()} | start projection")
-        logits = input_embedding.projection(hidden_states)
-        print(f"rank: {bmp.rank()} | get bias")
-        bias = self.decoder.bias
-        print(f"rank: {bmp.rank()} | add bias")
-        logits = logits + bias
-        print(f"rank: {bmp.rank()} | start return logits")
+        # logits = self.decoder(hidden_states)
+        logits = input_embedding.projection(hidden_states) + self.decoder.bias
+
         return logits
+
 
 class Roberta(BaseModel):
 
@@ -157,7 +153,6 @@ class Roberta(BaseModel):
                 output_hidden_states=None,  # unused
                 return_dict=True,
                 return_logits = False,
-                alpha=0.05,
                 ):
         """ This model inherits from BaseModel. This model is also a PyTorch torch.nn.Module subclass.
             You can use it as a regular PyTorch Module.
@@ -219,8 +214,6 @@ class Roberta(BaseModel):
         token_type_embeds = self.token_type_embedding(token_type_ids.to(torch.int32))
         hidden_states = hidden_states + token_type_embeds + position_embeds
 
-        # hidden_states = hidden_states*alpha + hidden_states.detach()*(1-alpha)
-
         hidden_states = self.embed_dropout(hidden_states)
 
         if use_cache:
@@ -230,21 +223,17 @@ class Roberta(BaseModel):
             hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
-            print(f"rank: {bmp.rank()}, cls_head: {self.cls_head}")
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            print(f"rank: {bmp.rank()}, tied: {self.tied}")
             logits = self.lm_head(hidden_states, self.input_embedding)
-            print(f"rank: {bmp.rank()}, logits: {logits.size()}")
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
-        print(f"rank: {bmp.rank()}, start return")
         if return_logits:
             return logits
 
         pooled_output = self.pooler(hidden_states)
-        
+
         if not return_dict:
             return (hidden_states, pooled_output, None, None, None, None)
         else:
