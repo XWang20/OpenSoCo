@@ -60,31 +60,30 @@ def get_optimizer(args, model):
                                                 betas = (0.9, 0.98),
                                                 weight_decay=args.weight_decay)
     
-    # if args.save is not None:
-    #     bmp.print_rank("Loading the optimizer...")
+    if args.save is not None:
+        bmp.print_rank("Loading the optimizer...")
         
-    #     # # if use the momentum, load optimizer
-    #     # states = torch.load(
-    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
+        # # if use the momentum, load optimizer
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-    #     # # if use the momentum, load the "state" in the optimizer state_dict
-    #     # optimizer.load_state_dict(states)
+        # # if use the momentum, load the "state" in the optimizer state_dict
+        # optimizer.load_state_dict(states)
         
-    #     # if dont use the momentum, delete the "state" in the optimizer state_dict
-    #     # states = torch.load(
-    #     #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
-    #     states = torch.load(
-    #         os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
+        # if dont use the momentum, delete the "state" in the optimizer state_dict
+        # states = torch.load(
+        #     os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % 0))
+        states = torch.load(
+            os.path.join(args.save, 'checkpoints', "optimizer.rank-%d.opt" % 0))
 
-    #     del states['state']
-    #     optimizer_state = optimizer.state_dict()
-    #     # optimizer_state["param_groups"][0]["lr"] = optimizer_state["param_groups"][0]["lr"]*0.5
-    #     optimizer_state.update(states)
-    #     optimizer.load_state_dict(optimizer_state)
+        del states['state']
+        optimizer_state = optimizer.state_dict()
+        optimizer_state.update(states)
+        optimizer.load_state_dict(optimizer_state)
 
-    #     for name, param in optimizer.state_dict().items():
-    #         if name == "param_groups":
-    #             bmp.print_rank(name, param)
+        for name, param in optimizer.state_dict().items():
+            if name == "param_groups":
+                bmp.print_rank(name, param)
                 
     return optimizer
 
@@ -184,14 +183,11 @@ def valid(args, model, dev_dataloader, step, writer):
     model.eval()
     valid_loss = 0
     with torch.no_grad():
-        for valid_step, data in enumerate(dev_dataloader):
+        for _, data in enumerate(dev_dataloader):
             input_ids, attention_mask, labels = data
             input_ids, attention_mask, labels = input_ids.cuda(), attention_mask.cuda(), labels.cuda()
-            print(f"valid batch size: {input_ids.size()} | rank: {bmp.rank()}")
             logits = model(input_ids=input_ids, attention_mask=attention_mask, return_logits=True)
-            print(f"valid logits size: {logits.size()} logits dtype: {logits.dtype} loss dtype: {labels.dtype} | rank: {bmp.rank()}")
             loss = loss_func(logits.view(-1, logits.shape[-1]), labels.view(-1))
-            print(f"rank: {bmp.rank()} | step: {valid_step} | loss: {loss}")
             global_loss = bmp.sum_loss(loss).item()
             valid_loss += global_loss
 

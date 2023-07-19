@@ -14,16 +14,15 @@
 # limitations under the License.
 import torch
 
-import bmtrain as bmt
 from src.layer import Encoder, Embedding, Linear, LayerNorm
 from src.model.basemodel import BaseModel
 from src.model.config import RobertaConfig
 from transformers.modeling_outputs import BaseModelOutputWithPoolingAndCrossAttentions
 
-class RoertaPooler(torch.nn.Module):
-    def __init__(self, dim_model):
+class RobertaPooler(torch.nn.Module):
+    def __init__(self, dim_model, dtype=torch.half):
         super().__init__()
-        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True, dtype=dtype)
         self.activation = torch.nn.Tanh()
 
     def forward(self, hidden_states):
@@ -32,31 +31,20 @@ class RoertaPooler(torch.nn.Module):
         return pooled_output
 
 
-class RoertaLMHead(torch.nn.Module):
-    def __init__(self, dim_model, vocab_size, norm_eps):
+class RobertaLMHead(torch.nn.Module):
+    def __init__(self, dim_model, vocab_size, norm_eps, dtype=torch.half):
         super().__init__()
-        self.dense = Linear(dim_model, dim_model, bias=True)
+        self.dense = Linear(dim_model, dim_model, bias=True, dtype=dtype)
         self.act_fn = torch.nn.functional.gelu
-        self.layer_norm = LayerNorm(dim_model, eps=norm_eps)
+        self.layer_norm = LayerNorm(dim_model, eps=norm_eps, dtype=dtype)
         
-        self.decoder = Linear(dim_model, vocab_size, bias=True, dtype=torch.bfloat16)
-
-        # self.bias = bmt.DistributedParameter(
-        #     torch.empty((vocab_size,)),
-        #     init_method=bmt.ParameterInitializer(torch.nn.init.zeros_)
-        # )
+        self.decoder = Linear(dim_model, vocab_size, bias=True, dtype=dtype)
         
     def forward(self, hidden_states, input_embedding):
         hidden_states = self.dense(hidden_states)
         hidden_states = self.act_fn(hidden_states)
         hidden_states = self.layer_norm(hidden_states)
-        print(f"rank: {bmt.rank()} | start projection")
-        logits = input_embedding.projection(hidden_states)
-        print(f"rank: {bmt.rank()} | projection: {logits.size()}")
-        bias = self.decoder.bias
-        print(f"rank: {bmt.rank()} | add bias")
-        logits = logits + bias
-        print(f"rank: {bmt.rank()} | start return logits")
+        logits = input_embedding.projection(hidden_states) + self.decoder.bias
         return logits
 
 class Roberta(BaseModel):
@@ -138,13 +126,14 @@ class Roberta(BaseModel):
                 init_std=config.proj_init_std,
                 bias=config.proj_bias,
             )
-        self.lm_head = RoertaLMHead(
+        self.lm_head = RobertaLMHead(
             dim_model=config.dim_model,
             vocab_size=config.vocab_size,
             norm_eps=config.norm_eps,
+            dtype=config.dtype,
         )
 
-        self.pooler = RoertaPooler(config.dim_model)
+        self.pooler = RobertaPooler(config.dim_model, dtype=config.dtype)
         self.padding_idx = config.pad_token_id
 
     def forward(self,
@@ -236,16 +225,12 @@ class Roberta(BaseModel):
             hidden_states = self.encoder(hidden_states, attention_mask)
 
         if self.cls_head:
-            print(f"rank: {bmt.rank()}, cls_head: {self.cls_head}")
             logits = self.cls_projection(hidden_states)
         elif self.tied:
-            print(f"rank: {bmt.rank()}, tied: {self.tied}")
             logits = self.lm_head(hidden_states, self.input_embedding)
-            print(f"rank: {bmt.rank()}, logits: {logits.size()}")
         elif not self.tied:
             logits = self.lm_head(hidden_states)
 
-        print(f"rank: {bmt.rank()}, start return")
         if return_logits:
             return logits
 
