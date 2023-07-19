@@ -14,6 +14,7 @@
 # limitations under the License.
 import torch
 
+import bmtrain as bmp
 from model_center.layer import Encoder, Embedding, Linear, LayerNorm
 from model_center.model.basemodel import BaseModel
 from model_center.model.config import RobertaConfig
@@ -40,9 +41,13 @@ class RoertaLMHead(torch.nn.Module):
         self.decoder = Linear(dim_model, vocab_size, bias=True)
 
     def forward(self, hidden_states, input_embedding):
+        print(f"rank: {bmp.get_rank()}, start dense")
         hidden_states = self.dense(hidden_states)
+        print(f"rank: {bmp.get_rank()} | start act_fn")
         hidden_states = self.act_fn(hidden_states)
+        print(f"rank: {bmp.get_rank()} | start layer_norm")
         hidden_states = self.layer_norm(hidden_states)
+        print(f"rank: {bmp.get_rank()} | start projection")
         # logits = self.decoder(hidden_states)
         logits = input_embedding.projection(hidden_states) + self.decoder.bias
 
@@ -177,9 +182,7 @@ class Roberta(BaseModel):
             BaseModelOutputWithPoolingAndCrossAttentions or tuple or torch.Tensor of shape (batch, seq_length, vocab_output_size) or (batch, seqlen, cls_head): The Bert output. Depended on the value of `return_dict` and `return_logits`
 
         """
-        import bmtrain as bmp
         assert input_ids is not None or inputs_embeds is not None
-        print(f"rank: {bmp.rank()} | start forward")
 
         if input_ids is not None:
             batch = input_ids.size(0)
@@ -190,10 +193,7 @@ class Roberta(BaseModel):
             seq_length = inputs_embeds.size(1)
             device = inputs_embeds.device
 
-        print(f"rank: {bmp.rank()} | batch: {batch} | seq_length: {seq_length} | device: {device}")
-
         with torch.no_grad():
-            print(f"rank: {bmp.rank()} | start with torch.no_grad()")
 
             if attention_mask is not None:
                 attention_mask = attention_mask.to(torch.bool)
@@ -209,14 +209,10 @@ class Roberta(BaseModel):
             if token_type_ids is None:
                 token_type_ids = torch.zeros(seq_length, dtype=torch.int32, device=device)[None, :].repeat(batch, 1)
 
-        print(f"rank: {bmp.rank()} | start embedding")
-
         if inputs_embeds is None:
             hidden_states = self.input_embedding(input_ids.to(torch.int32))
         else:
             hidden_states = inputs_embeds
-
-        print(f"rank: {bmp.rank()} | start embedding dropout")
 
         pkv_len = 0 if past_key_values is None else past_key_values[0][0].size(-2)
         position_embeds = self.position_embedding(position_ids.to(torch.int32) + pkv_len)
@@ -227,31 +223,25 @@ class Roberta(BaseModel):
 
         hidden_states = self.embed_dropout(hidden_states)
 
-        print(f"rank: {bmp.rank()} | start encoder")
-
         if use_cache:
             hidden_states, current_key_values = self.encoder(hidden_states, attention_mask, 
                                                              use_cache = use_cache, past_key_values = past_key_values)
         else:
             hidden_states = self.encoder(hidden_states, attention_mask)
 
-        print(f"rank: {bmp.rank()} | start cls")
-
         if self.cls_head:
+            print(f"rank: {bmp.rank()}, cls_head: {self.cls_head}")
             logits = self.cls_projection(hidden_states)
         elif self.tied:
+            print(f"rank: {bmp.rank()}, tied: {self.tied}")
             logits = self.lm_head(hidden_states, self.input_embedding)
         elif not self.tied:
             logits = self.lm_head(hidden_states)
-
-        print(f"rank: {bmp.rank()} | start return_logits")
 
         if return_logits:
             return logits
 
         pooled_output = self.pooler(hidden_states)
-
-        print(f"rank: {bmp.rank()} | start return")
         
         if not return_dict:
             return (hidden_states, pooled_output, None, None, None, None)
