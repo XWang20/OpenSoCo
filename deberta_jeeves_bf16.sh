@@ -1,10 +1,5 @@
 #! /bin/bash
 
-rm -rf /data/tensorboard/35*
-rm -rf /data/tensorboard/20230704*
-rm -rf /data/tensorboard/20230705*
-rm -rf /data/tensorboard/413000
-
 pip install -v -e ./bmtrain
 
 export NCCL_P2P_DISABLE=1
@@ -56,11 +51,11 @@ OPTS+=" --weight-decay 0.01"
 OPTS+=" --clip-grad 1.0"
 OPTS+=" --loss-scale 524288"
 OPTS+=" --start-step 0"
-OPTS+=" --batch-size $((256 / ${WORLD_SIZE}))"
+OPTS+=" --batch-size $((128 / ${WORLD_SIZE}))"
 OPTS+=" --lr 7e-5"
 OPTS+=" --save-iters 500"
 OPTS+=" --log-iters 100"
-OPTS+=" --gradient-accumulate 1"
+OPTS+=" --gradient-accumulate 2"
 OPTS+=" --train-iters 1000000"
 OPTS+=" --report_to tensorboard"
 
