@@ -83,14 +83,14 @@ def get_optimizer(args, model):
         states = torch.load(
             os.path.join(args.save, 'checkpoints', "checkpoint.rank-%d.opt" % (bmp.rank())))
         
-        # if use the momentum, load the "state" in the optimizer state_dict
-        optimizer.load_state_dict(states)
+        # # if use the momentum, load the "state" in the optimizer state_dict
+        # optimizer.load_state_dict(states)
         
         # if dont use the momentum, delete the "state" in the optimizer state_dict
-        # del states['state']
-        # optimizer_state = optimizer.state_dict()
-        # optimizer_state.update(states)
-        # optimizer.load_state_dict(optimizer_state)
+        del states['state']
+        optimizer_state = optimizer.state_dict()
+        optimizer_state.update(states)
+        optimizer.load_state_dict(optimizer_state)
 
         for name, param in optimizer.state_dict().items():
             if name == "param_groups":
