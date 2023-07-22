@@ -205,7 +205,9 @@ def batch_iter(args, dataset):
     # 遇到nan了，要跳过一些数据继续训，current st=392500, max_length=256, st+=(392500-364000)*256=28500*256, 再跳过一截数据，假设多跳过1w step的数据，st+=38500*256
     # 英文模型
     # st = 0  # 从第一个数据开始训练
-    st = (args.start_step + 61000 - 357500) * args.batch_size // 2
+    # st = (args.start_step + 61000 - 357500) * args.batch_size // 2
+    st = 55000*args.batch_size*2 + (207500-5500)*args.batch_size + (args.start_step-232500)*args.batch_size + 100
+
     input_ids_list = []
     attention_mask_list = []
     labels_list = []
