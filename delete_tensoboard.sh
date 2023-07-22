@@ -1,5 +1,6 @@
-rm -rf /data/tensorboard/40*
-rm -rf /data/tensorboard/39*
-rm -rf /data/tensorboard/38*
-rm -rf /data/tensorboard/411*
-rm -rf /data/tensorboard/410*
+rm -rf /data/tensorboard/20*
+rm -rf /data/tensorboard/21*
+rm -rf /data/tensorboard/22*
+rm -rf /data/tensorboard/23*
+rm -rf /data/tensorboard/24*
+rm -rf /data/tensorboard/25*
