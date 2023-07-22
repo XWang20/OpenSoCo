@@ -2,11 +2,6 @@
 
 pip install -v -e ./bmtrain
 
-export NCCL_P2P_DISABLE=1
-export CUDA_LAUNCH_BLOCKING=1
-export NCCL_DEBUG=INFO
-export NCCL_DEBUG_SUBSYS=ALL
-
 pip install model_center
 
 ls -l -ch /data
