@@ -206,7 +206,7 @@ def batch_iter(args, dataset):
     # 英文模型
     # st = 0  # 从第一个数据开始训练
     # st = (args.start_step + 61000 - 357500) * args.batch_size // 2
-    st = 55000*args.batch_size*2 + (207500-5500)*args.batch_size + (args.start_step-232500)*args.batch_size + 5000*args.batch_size
+    st = 55000*args.batch_size*2 + (207500-5500)*args.batch_size + (args.start_step-232500)*args.batch_size + 20000*args.batch_size
 
     input_ids_list = []
     attention_mask_list = []
